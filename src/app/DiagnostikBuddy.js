@@ -49,7 +49,9 @@ export default function DiagnostikBuddy() {
     setIsLoading(true);
 
     try {
-      const systemPrompt = contextPrompts[context] + `\n\nAntworte auf Deutsch, professionell und praxisorientiert. 
+      const systemPrompt = contextPrompts[context] + `\n\nAntworte auf Deutsch, professionell und praxisorientiert. Nutze KEINE Emojis. 
+      Sei stets differenziert und benutze keine Begriffe wie rote Flaggen oder Grüne Lichter!
+      Strukturiere deinen Output, OHNE Markdown oder sonstige Syntax. Antworte nicht ausschweifend, sondern prägnant und fokussiere dich auf die wesentlichsten Punkte (80/20 Regel), um den Nutzer nicht zu überfordern, sondern ihm Schritt für Schritt zu helfen. 
       Nutze dein Wissen über Psychometrie, Organisationspsychologie und Eignungsdiagnostik.`;
 
       const response = await fetch('/api/chat', {
@@ -121,8 +123,8 @@ export default function DiagnostikBuddy() {
                 <Brain className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Diagnostik-Buddy</h1>
-                <p className="text-sm text-gray-500">Ihr Assistent für hochwertige Eignungsdiagnostik</p>
+                <h1 className="text-2xl font-bold text-gray-900">Balanced Six</h1>
+                <p className="text-sm text-gray-500">Assistent für die B6 Kompakt Anwendung</p>
               </div>
             </div>
             <button
