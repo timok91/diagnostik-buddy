@@ -111,13 +111,13 @@ export default function DiagnostikBuddy() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-white to-primary">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-xl">
+              <div className="bg-gradient-to-br from-primary to-secondary p-2 rounded-xl">
                 <Brain className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -139,7 +139,7 @@ export default function DiagnostikBuddy() {
       {showSettings && (
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="bg-white rounded-lg p-6 shadow-lg border border-gray-200">
-            <h3 className="text-lg font-semibold mb-4">Einstellungen</h3>
+            <h3 className="text-primary font-semibold mb-4">Einstellungen</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -150,10 +150,10 @@ export default function DiagnostikBuddy() {
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder="sk-ant-..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <p className="mt-2 text-sm text-gray-500">
-                  Holen Sie sich einen API-Key auf <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">console.anthropic.com</a>
+                  Holen Sie sich einen API-Key auf <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">console.anthropic.com</a>
                 </p>
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function DiagnostikBuddy() {
           {/* Sidebar */}
           <div className="col-span-3 space-y-4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3">
+              <div className="bg-primary px-4 py-3">
                 <h2 className="text-white font-semibold">Arbeitsbereiche</h2>
               </div>
               <nav className="p-2">
@@ -175,7 +175,7 @@ export default function DiagnostikBuddy() {
                   onClick={() => setContext('anforderungsanalyse')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                     context === 'anforderungsanalyse'
-                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      ? 'bg-primary/10 text-primary font-medium'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
@@ -186,7 +186,7 @@ export default function DiagnostikBuddy() {
                   onClick={() => setContext('interpretation')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                     context === 'interpretation'
-                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      ? 'bg-primary/10 text-primary font-medium'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
@@ -197,7 +197,7 @@ export default function DiagnostikBuddy() {
                   onClick={() => setContext('interview')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                     context === 'interview'
-                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      ? 'bg-primary/10 text-primary font-medium'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
@@ -209,7 +209,7 @@ export default function DiagnostikBuddy() {
 
             {/* Quick Starts */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <h3 className="font-semibold text-primary mb-3 flex items-center gap-2">
                 <ChevronRight className="w-4 h-4" />
                 Schnellstart
               </h3>
@@ -218,7 +218,7 @@ export default function DiagnostikBuddy() {
                   <button
                     key={idx}
                     onClick={() => setInput(prompt)}
-                    className="w-full text-left text-sm px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 transition-colors text-gray-700"
+                    className="w-full text-left text-sm px-3 py-2 rounded-lg bg-gray-50 hover:bg-primary/10 hover:text-primary transition-colors text-gray-700"
                   >
                     {prompt}
                   </button>
@@ -231,7 +231,7 @@ export default function DiagnostikBuddy() {
           <div className="col-span-9">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 h-[700px] flex flex-col">
               {/* Chat Header */}
-              <div className="border-b border-gray-200 px-6 py-4 bg-gradient-to-r from-gray-50 to-white">
+              <div className="border-b border-gray-200 px-6 py-4 bg-secondary/40">
                 <h2 className="font-semibold text-gray-900">
                   {context === 'anforderungsanalyse' && 'Anforderungsanalyse'}
                   {context === 'interpretation' && 'Testergebnis-Interpretation'}
@@ -268,14 +268,14 @@ export default function DiagnostikBuddy() {
                     }`}
                   >
                     {msg.role === 'assistant' && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
                         <Brain className="w-4 h-4 text-white" />
                       </div>
                     )}
                     <div
                       className={`max-w-3xl rounded-2xl px-4 py-3 ${
                         msg.role === 'user'
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-primary text-white'
                           : 'bg-gray-100 text-gray-900'
                       }`}
                     >
@@ -291,7 +291,7 @@ export default function DiagnostikBuddy() {
 
                 {isLoading && (
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                       <Brain className="w-4 h-4 text-white" />
                     </div>
                     <div className="bg-gray-100 rounded-2xl px-4 py-3">
@@ -315,12 +315,12 @@ export default function DiagnostikBuddy() {
                     onKeyPress={(e) => e.key === 'Enter' && !isLoading && sendMessage()}
                     placeholder="Ihre Frage eingeben..."
                     disabled={isLoading}
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="text-primary flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                   <button
                     onClick={sendMessage}
                     disabled={isLoading || !input.trim()}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium"
+                    className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:from-primary hover:to-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium"
                   >
                     <Send className="w-4 h-4" />
                     Senden
