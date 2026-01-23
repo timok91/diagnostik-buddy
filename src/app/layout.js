@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Balanced Six - B6 Kompakt Assistent",
-  description: "Assistent für professionelle B6 Kompakt Assessments",
+  description: "Professionelle Eignungsdiagnostik mit B6 Kompakt",
 };
 
 export default function RootLayout({ children }) {

@@ -40,12 +40,12 @@ export default function ChatInterface({
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center max-w-md">
-              <img src="/logo.png" alt="Logo" className="w-16 h-16 mx-auto mb-4 opacity-20" />
+              <img src="/logo.png" alt="Logo" className="w-16 h-18 mx-auto mb-4 opacity-40" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Starten Sie die Konversation
               </h3>
               <p className="text-gray-600 text-sm">
-                Stellen Sie Ihre erste Frage oder beschreiben Sie die Position, für die Sie Anforderungen definieren möchten.
+                Stellen Sie Ihre erste Frage oder beschreiben Sie Ihr Anliegen.
               </p>
             </div>
           </div>
@@ -99,7 +99,7 @@ export default function ChatInterface({
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 p-4 bg-gray-50">
+      <div className="border-t border-iron-200 p-4 bg-gray-50 text-primary">
         <div className="flex gap-3">
           <textarea
             value={input}
@@ -113,7 +113,7 @@ export default function ChatInterface({
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
-            className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium"
+            className="px-6 py-3 bg-primary text-white rounded-xl hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center gap-2 font-medium"
           >
             <Send className="w-4 h-4" />
           </button>
