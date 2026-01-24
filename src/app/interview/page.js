@@ -43,7 +43,7 @@ function AnalysisSelector({ onSelect, onCancel }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-b border-iron-200 bg-iron-50">
           <h3 className="text-xl font-bold text-gray-900">Anforderungsanalyse auswählen</h3>
           <p className="text-sm text-gray-600 mt-1">
             Wählen Sie die Anforderungsanalyse als Basis für die Interviewvorbereitung.
@@ -55,7 +55,7 @@ function AnalysisSelector({ onSelect, onCancel }) {
               <button
                 key={analysis.id}
                 onClick={() => onSelect(analysis)}
-                className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-primary hover:bg-primary/5 transition-all text-left"
+                className="w-full p-4 rounded-lg border-2 border-iron-200 hover:border-primary hover:bg-primary/5 transition-all text-left"
               >
                 <div className="flex items-center gap-3">
                   <FileText className="w-5 h-5 text-primary" />
@@ -71,10 +71,10 @@ function AnalysisSelector({ onSelect, onCancel }) {
             ))}
           </div>
         </div>
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-t border-iron-200 bg-iron-50">
           <button
             onClick={onCancel}
-            className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="w-full px-4 py-2 border border-iron-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Abbrechen
           </button>
@@ -336,14 +336,14 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
 
   if (!isHydrated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-primary/5 flex items-center justify-center">
+      <div className="min-h-screen bg-iron-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-primary/5 flex flex-col">
+    <div className="min-h-screen bg-iron-100 flex flex-col">
       {/* Analysis Selector Modal */}
       {showAnalysisSelector && (
         <AnalysisSelector
@@ -353,13 +353,13 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-white border-b border-iron-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-iron-100 rounded-lg transition-colors"
                 title="Zur Startseite"
               >
                 <Home className="w-5 h-5 text-gray-600" />
@@ -376,7 +376,7 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
             </div>
             <button
               onClick={() => setShowAnalysisSelector(true)}
-              className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className="px-4 py-2 text-sm border border-iron-300 text-gray-700 rounded-lg hover:bg-iron-50 transition-colors flex items-center gap-2"
             >
               <FileText className="w-4 h-4" />
               Analyse wechseln
@@ -409,13 +409,13 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
 
       {/* Main Content */}
       <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-280px)]">
+        <div className="bg-white rounded-xl shadow-sm border border-iron-200 overflow-hidden flex flex-col h-[calc(100vh-280px)]">
           
           {/* Interview Guide Modal */}
           {showGuide && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
               <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden">
-                <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6">
+                <div className="sticky top-0 bg-white border-b border-iron-200 px-8 py-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <FileText className="w-8 h-8 text-primary" />
@@ -433,22 +433,22 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                 </div>
                 
                 <div className="px-8 py-6 overflow-y-auto max-h-[60vh]">
-                  <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="bg-iron-50 rounded-lg p-6">
                     <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{interviewGuide}</p>
                   </div>
                 </div>
 
-                <div className="px-8 py-6 border-t border-gray-200 bg-gray-50">
+                <div className="px-8 py-6 border-t border-iron-200 bg-iron-50">
                   <div className="flex gap-3">
                     <button
                       onClick={() => setShowGuide(false)}
-                      className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex-1 px-6 py-3 border border-iron-300 text-gray-700 rounded-lg hover:bg-iron-50 transition-colors"
                     >
                       Weiter bearbeiten
                     </button>
                     <button
                       onClick={handleDownloadGuide}
-                      className="flex-1 px-6 py-3 bg-secondary text-primary border-2 border-primary rounded-lg hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 px-6 py-3 bg-secondary-100 text-primary border-2 border-primary rounded-lg hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2"
                     >
                       <Download className="w-4 h-4" />
                       Herunterladen
@@ -478,11 +478,11 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
           </div>
 
           {/* Footer with Actions */}
-          <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+          <div className="border-t border-iron-200 px-6 py-4 bg-iron-50">
             <div className="flex items-center justify-between">
               <button
                 onClick={() => router.push('/')}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-6 py-3 border border-iron-300 text-gray-700 rounded-lg hover:bg-iron-50 transition-colors"
               >
                 Zur Startseite
               </button>
@@ -492,7 +492,7 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                   <button
                     onClick={handleGenerateGuide}
                     disabled={isLoading}
-                    className="px-6 py-3 bg-secondary text-primary border-2 border-primary rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
+                    className="px-6 py-3 bg-secondary-100 text-primary border-2 border-primary rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
                   >
                     <FileText className="w-4 h-4" />
                     Leitfaden generieren

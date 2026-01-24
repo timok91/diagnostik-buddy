@@ -60,7 +60,7 @@ function AnalysisSelector({ onSelect, onCancel }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-b border-iron-200 bg-iron-50">
           <h3 className="text-xl font-bold text-gray-900">Anforderungsanalyse auswählen</h3>
           <p className="text-sm text-gray-600 mt-1">
             Wählen Sie die Anforderungsanalyse, auf deren Basis Sie die Profile interpretieren möchten.
@@ -72,7 +72,7 @@ function AnalysisSelector({ onSelect, onCancel }) {
               <button
                 key={analysis.id}
                 onClick={() => onSelect(analysis)}
-                className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-primary hover:bg-primary/5 transition-all text-left"
+                className="w-full p-4 rounded-lg border-2 border-iron-200 hover:border-primary hover:bg-primary/5 transition-all text-left"
               >
                 <div className="flex items-center gap-3">
                   <FileText className="w-5 h-5 text-primary" />
@@ -88,10 +88,10 @@ function AnalysisSelector({ onSelect, onCancel }) {
             ))}
           </div>
         </div>
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-t border-iron-200 bg-iron-50">
           <button
             onClick={onCancel}
-            className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="w-full px-4 py-2 border border-iron-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Abbrechen
           </button>
@@ -108,11 +108,11 @@ function CandidateCard({ candidate, onUpdate, onRemove, isExpanded, onToggle }) 
   };
 
   return (
-    <div className="border-2 border-gray-200 rounded-lg hover:border-primary/30 transition-colors overflow-hidden">
+    <div className="border-2 border-iron-200 rounded-lg hover:border-primary/30 transition-colors overflow-hidden">
       {/* Header - Always visible */}
       <button
         onClick={onToggle}
-        className="w-full px-4 py-3 bg-gray-50 flex items-center justify-between hover:bg-gray-100 transition-colors"
+        className="w-full px-4 py-3 bg-iron-50 flex items-center justify-between hover:bg-iron-100 transition-colors"
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -147,7 +147,7 @@ function CandidateCard({ candidate, onUpdate, onRemove, isExpanded, onToggle }) 
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-iron-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {B6_DIMENSIONS.map((dimension) => (
               <DimensionSlider
@@ -165,7 +165,7 @@ function CandidateCard({ candidate, onUpdate, onRemove, isExpanded, onToggle }) 
               />
             ))}
           </div>
-          <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+          <div className="mt-4 pt-4 border-t border-iron-200 flex justify-end">
             <button
               onClick={() => onRemove(candidate.id)}
               className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1"
@@ -259,8 +259,8 @@ KANDIDATEN UND B6 KOMPAKT ERGEBNISSE:
 ${candidatesOverview || 'Noch keine Kandidaten eingegeben'}
 
 B6 KOMPAKT DIMENSIONEN:
-- ICH: Selbstvertrauen, Durchsetzungsfähigkeit, Eigeninitiative
-- WIR: Teamorientierung, Kooperationsbereitschaft, soziale Kompetenz
+- ICH: Durchsetzungsfähigkeit, Eigeninitiative
+- WIR: Teamorientierung, Kooperationsbereitschaft, Einfühlungsvermögen
 - DENKEN: Analytisches Denken, Problemlösefähigkeit, konzeptionelles Arbeiten
 - TUN: Umsetzungsorientierung, Handlungsbereitschaft, Pragmatismus
 - Ich bin o.k.: Selbstwert, emotionale Stabilität, Resilienz
@@ -353,7 +353,6 @@ STIL:
 1. Kernergebnisse pro Kandidat (3-4 Hauptpunkte)
 2. Stärken und Chancen bezogen auf die Anforderungen
 3. Entwicklungsbereiche und mögliche Risiken
-4. Vergleichende Einschätzung der Kandidaten (falls mehrere)
 
 Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
 
@@ -399,14 +398,14 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
 
   if (!isHydrated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-primary/5 flex items-center justify-center">
+      <div className="min-h-screen bg-iron-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-primary/5 flex flex-col">
+    <div className="min-h-screen bg-iron-100 flex flex-col">
       {/* Analysis Selector Modal */}
       {showAnalysisSelector && (
         <AnalysisSelector
@@ -416,7 +415,7 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-white border-b border-iron-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -439,7 +438,7 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
             </div>
             <button
               onClick={() => setShowAnalysisSelector(true)}
-              className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className="px-4 py-2 text-sm border border-iron-300 text-gray-700 rounded-lg hover:bg-iron-50 transition-colors flex items-center gap-2"
             >
               <FileText className="w-4 h-4" />
               Analyse wechseln
@@ -453,8 +452,8 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-220px)]">
           
           {/* Candidates Panel */}
-          <div className={`lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden ${showCandidatePanel ? '' : 'hidden lg:flex'}`}>
-            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+          <div className={`lg:col-span-1 bg-white rounded-xl shadow-sm border border-iron-200 flex flex-col overflow-hidden ${showCandidatePanel ? '' : 'hidden lg:flex'}`}>
+            <div className="px-4 py-3 border-b border-iron-200 bg-iron-50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary" />
                 <h2 className="font-semibold text-gray-900">Kandidaten</h2>
@@ -462,14 +461,14 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
               </div>
               <button
                 onClick={() => setShowCandidatePanel(false)}
-                className="lg:hidden p-1 hover:bg-gray-200 rounded"
+                className="lg:hidden p-1 hover:bg-iron-200 rounded"
               >
                 <ChevronUp className="w-4 h-4" />
               </button>
             </div>
 
             {/* Add Candidate */}
-            <div className="p-3 border-b border-gray-200">
+            <div className="p-3 border-b border-iron-200">
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -477,7 +476,7 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
                   onChange={(e) => setNewCandidateName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddCandidate()}
                   placeholder="Name eingeben..."
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="flex-1 px-3 py-2 text-sm text-primary border border-iron-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <button
                   onClick={handleAddCandidate}
@@ -512,12 +511,12 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
           </div>
 
           {/* Chat Panel */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-iron-200 flex flex-col overflow-hidden">
             {/* Mobile Toggle */}
             {!showCandidatePanel && (
               <button
                 onClick={() => setShowCandidatePanel(true)}
-                className="lg:hidden px-4 py-2 border-b border-gray-200 bg-gray-50 flex items-center gap-2 text-sm text-gray-600"
+                className="lg:hidden px-4 py-2 border-b border-iron-200 bg-iron-50 flex items-center gap-2 text-sm text-gray-600"
               >
                 <Users className="w-4 h-4" />
                 Kandidaten anzeigen ({sessionData.candidates.length})
@@ -570,11 +569,11 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
             </div>
 
             {/* Footer with Actions */}
-            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+            <div className="border-t border-iron-200 px-6 py-4 bg-iron-50">
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => router.push('/')}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-6 py-3 border border-iron-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Zur Startseite
                 </button>
@@ -584,7 +583,7 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
                     <button
                       onClick={handleFinishInterpretation}
                       disabled={isLoading}
-                      className="px-6 py-3 bg-secondary text-primary border-2 border-primary rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
+                      className="px-6 py-3 bg-secondary-100 text-primary border-2 border-primary rounded-lg hover:bg-secondary-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
                     >
                       <CheckCircle className="w-4 h-4" />
                       Abschließen

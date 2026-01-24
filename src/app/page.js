@@ -10,7 +10,11 @@ import {
   ArrowRight,
   Settings,
   Clock,
-  FileText
+  FileText,
+  Download,
+  Edit3,
+  X,
+  Save
 } from 'lucide-react';
 import { SessionProvider, useSession } from '@/context/SessionContext';
 import { useState } from 'react';
@@ -19,7 +23,8 @@ function HomeContent() {
   const router = useRouter();
   const { 
     savedAnalyses, 
-    deleteAnalysis, 
+    deleteAnalysis,
+    updateAnalysisDirect,
     startModule, 
     updateSession,
     sessionData,
@@ -27,6 +32,10 @@ function HomeContent() {
   } = useSession();
   const [showSettings, setShowSettings] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [editingAnalysis, setEditingAnalysis] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editRequirements, setEditRequirements] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const modules = [
     {
@@ -69,7 +78,6 @@ function HomeContent() {
 
   const handleStartModule = (module) => {
     if (module.requiresAnalysis && savedAnalyses.length === 0) {
-      // Keine gespeicherten Analysen - erst zur Anforderungsanalyse
       alert('Bitte führen Sie zuerst eine Anforderungsanalyse durch.');
       startModule('anforderungsanalyse');
       router.push('/anforderungsanalyse');
@@ -77,7 +85,6 @@ function HomeContent() {
     }
     
     if (module.requiresAnalysis) {
-      // Zur Modulseite mit Analyse-Auswahl
       startModule(module.id);
       router.push(module.route);
     } else {
@@ -91,9 +98,75 @@ function HomeContent() {
     router.push('/anforderungsanalyse');
   };
 
-  const handleOpenAnalysis = (analysis) => {
-    startModule('anforderungsanalyse', { analysisId: analysis.id });
-    router.push('/anforderungsanalyse');
+  const handleOpenEditModal = (analysis) => {
+    setEditingAnalysis(analysis);
+    setEditName(analysis.name);
+    setEditRequirements(analysis.requirements || '');
+    setHasUnsavedChanges(false);
+  };
+
+  const handleCloseEditModal = () => {
+    if (hasUnsavedChanges) {
+      if (!confirm('Sie haben ungespeicherte Änderungen. Möchten Sie wirklich schließen?')) {
+        return;
+      }
+    }
+    setEditingAnalysis(null);
+    setEditName('');
+    setEditRequirements('');
+    setHasUnsavedChanges(false);
+  };
+
+  const handleSaveChanges = () => {
+    if (!editName.trim()) {
+      alert('Bitte geben Sie einen Namen ein.');
+      return;
+    }
+    
+    updateAnalysisDirect(editingAnalysis.id, {
+      name: editName.trim(),
+      requirements: editRequirements
+    });
+    
+    setHasUnsavedChanges(false);
+    setEditingAnalysis(null);
+  };
+
+  const handleEditNameChange = (value) => {
+    setEditName(value);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleEditRequirementsChange = (value) => {
+    setEditRequirements(value);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleDownloadAnalysis = (analysis) => {
+    const content = `ANFORDERUNGSPROFIL
+${'='.repeat(80)}
+
+Name: ${analysis.name}
+Erstellt: ${new Date(analysis.createdAt).toLocaleDateString('de-DE')}
+Zuletzt bearbeitet: ${new Date(analysis.updatedAt).toLocaleDateString('de-DE')}
+
+${'='.repeat(80)}
+
+${analysis.requirements || 'Keine Anforderungen definiert'}
+
+${'='.repeat(80)}
+Erstellt mit Balanced Six - B6 Kompakt Assistent
+`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Anforderungsprofil_${analysis.name.replace(/[^a-zA-Z0-9äöüÄÖÜß]/g, '_')}_${Date.now()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleDeleteAnalysis = (id) => {
@@ -305,10 +378,18 @@ function HomeContent() {
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => handleOpenAnalysis(analysis)}
-                            className="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                            onClick={() => handleOpenEditModal(analysis)}
+                            className="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-1.5"
                           >
-                            Öffnen
+                            <Edit3 className="w-3.5 h-3.5" />
+                            Bearbeiten
+                          </button>
+                          <button
+                            onClick={() => handleDownloadAnalysis(analysis)}
+                            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Herunterladen"
+                          >
+                            <Download className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setShowDeleteConfirm(analysis.id)}
@@ -327,6 +408,108 @@ function HomeContent() {
           )}
         </div>
 
+        {/* Edit Analysis Modal */}
+        {editingAnalysis && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-iron-200">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-6 h-6 text-primary" />
+                  <h3 className="text-xl font-bold text-gray-900">Anforderungsprofil bearbeiten</h3>
+                  {hasUnsavedChanges && (
+                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                      Ungespeicherte Änderungen
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={handleCloseEditModal}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Name Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Name der Analyse
+                  </label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => handleEditNameChange(e.target.value)}
+                    className="w-full px-4 py-2 border border-iron-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-primary"
+                    placeholder="z.B. Vertriebsleiter DACH"
+                  />
+                </div>
+
+                {/* Requirements Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Anforderungsprofil
+                  </label>
+                  <textarea
+                    value={editRequirements}
+                    onChange={(e) => handleEditRequirementsChange(e.target.value)}
+                    className="w-full px-4 py-3 border border-iron-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm text-primary"
+                    rows={20}
+                    placeholder="Anforderungen hier eingeben oder bearbeiten..."
+                  />
+                  <p className="mt-2 text-xs text-gray-500">
+                    Sie können den Text frei bearbeiten, ergänzen oder kürzen.
+                  </p>
+                </div>
+
+                {/* Metadata */}
+                <div className="bg-iron-50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Informationen</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div>
+                      <span className="text-gray-500">Erstellt:</span>{' '}
+                      {formatDate(editingAnalysis.createdAt)}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Zuletzt bearbeitet:</span>{' '}
+                      {formatDate(editingAnalysis.updatedAt)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-between px-6 py-4 border-t border-iron-200 bg-iron-50">
+                <button
+                  onClick={() => handleDownloadAnalysis({ ...editingAnalysis, name: editName, requirements: editRequirements })}
+                  className="px-4 py-2 text-gray-700 border border-iron-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Herunterladen
+                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCloseEditModal}
+                    className="px-4 py-2 border border-iron-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={handleSaveChanges}
+                    disabled={!hasUnsavedChanges}
+                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Save className="w-4 h-4" />
+                    Speichern
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
@@ -338,7 +521,7 @@ function HomeContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(null)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-iron-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Abbrechen
                 </button>

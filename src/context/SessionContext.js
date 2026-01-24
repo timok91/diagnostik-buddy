@@ -127,7 +127,7 @@ export function SessionProvider({ children }) {
     return newAnalysis;
   };
 
-  // Anforderungsanalyse aktualisieren
+  // Anforderungsanalyse aktualisieren (aus der aktiven Session)
   const updateAnalysis = (id) => {
     setSavedAnalyses(prev => prev.map(analysis => {
       if (analysis.id === id) {
@@ -140,6 +140,30 @@ export function SessionProvider({ children }) {
       }
       return analysis;
     }));
+  };
+
+  // Anforderungsanalyse direkt aktualisieren (mit übergebenen Werten)
+  const updateAnalysisDirect = (id, updates) => {
+    setSavedAnalyses(prev => prev.map(analysis => {
+      if (analysis.id === id) {
+        return {
+          ...analysis,
+          name: updates.name !== undefined ? updates.name : analysis.name,
+          requirements: updates.requirements !== undefined ? updates.requirements : analysis.requirements,
+          chat: updates.chat !== undefined ? updates.chat : analysis.chat,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return analysis;
+    }));
+
+    // Falls diese Analyse gerade in der Session geladen ist, auch dort aktualisieren
+    if (sessionData.selectedAnalysisId === id) {
+      updateSession({
+        analysisName: updates.name !== undefined ? updates.name : sessionData.analysisName,
+        requirements: updates.requirements !== undefined ? updates.requirements : sessionData.requirements,
+      });
+    }
   };
 
   // Anforderungsanalyse löschen
@@ -247,6 +271,7 @@ export function SessionProvider({ children }) {
       startModule,
       saveAnalysis,
       updateAnalysis,
+      updateAnalysisDirect,
       deleteAnalysis,
       loadAnalysis,
       addCandidate,

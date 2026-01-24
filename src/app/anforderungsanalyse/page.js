@@ -365,7 +365,7 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
                 {sessionData.requirements && (
                   <button
                     onClick={handleNextModule}
-                    className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                    className="px-6 py-3 bg-primary text-primary rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center gap-2"
                   >
                     Zur Interpretation
                     <ArrowRight className="w-4 h-4" />
