@@ -11,6 +11,7 @@ import {
   Settings,
   Clock,
   FileText,
+  BookOpen,
   Download,
   Edit3,
   X,
@@ -92,6 +93,18 @@ function HomeContent() {
       available: true,
       requiresAnalysis: true,
       route: '/interview'
+    },
+    {
+      id: 'training',
+      title: 'Training',
+      description: 'Wissenschaftlich fundiertes Wissen zu Beobachtungsfehlern, Biases und Best Practices',
+      icon: BookOpen,
+      color: 'from-iron-400 to-iron-500',
+      bgColor: 'bg-iron-50',
+      borderColor: 'border-iron-200',
+      available: true,
+      isStandalone: true,
+      route: '/training'
     }
   ];
 
@@ -103,6 +116,12 @@ function HomeContent() {
   };
 
   const handleStartModule = (module) => {
+    // Standalone Module wie Training brauchen keine Anforderungsanalyse
+    if (module.isStandalone) {
+      router.push(module.route);
+      return;
+    }
+    
     if (module.requiresAnalysis && savedAnalyses.length === 0) {
       alert('Bitte führen Sie zuerst eine Anforderungsanalyse durch.');
       startModule('anforderungsanalyse');
@@ -110,8 +129,13 @@ function HomeContent() {
       return;
     }
     
-    startModule(module.id);
-    router.push(module.route);
+    if (module.requiresAnalysis) {
+      startModule(module.id);
+      router.push(module.route);
+    } else {
+      startModule(module.id);
+      router.push(module.route);
+    }
   };
 
   const handleStartStandardProcess = () => {
@@ -392,13 +416,13 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
         {/* Module Cards */}
         <div className="mb-12">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Einzelne Module</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {modules.map((module) => {
               const Icon = module.icon;
               return (
                 <div
                   key={module.id}
-                  className={`relative bg-white rounded-xl border-2 ${module.borderColor} p-6 hover:shadow-lg transition-all group`}
+                  className={`relative bg-white rounded-xl border-2 ${module.borderColor} p-6 hover:shadow-lg transition-all group flex flex-col h-full`}
                 >
                   <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${module.color} flex items-center justify-center mb-4`}>
                     <Icon className="w-6 h-6 text-white" />
@@ -413,9 +437,9 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                   )}
                   <button
                     onClick={() => handleStartModule(module)}
-                    className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 bg-gradient-to-r ${module.color} text-white hover:shadow-md`}
+                    className={`mt-auto w-full py-2.5 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 bg-gradient-to-r ${module.color} text-white hover:shadow-md`}
                   >
-                    Starten
+                    {module.isStandalone ? 'Öffnen' : 'Starten'}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>

@@ -198,14 +198,14 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
 
   if (!isHydrated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-primary/5 flex items-center justify-center">
+      <div className="min-h-screen bg-iron-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-primary/5 flex flex-col">
+    <div className="min-h-screen bg-iron-100 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
