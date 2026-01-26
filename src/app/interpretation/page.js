@@ -18,11 +18,12 @@ import {
   Users,
   Save
 } from 'lucide-react';
-
-const B6_DIMENSIONS = [
-  'ICH', 'WIR', 'DENKEN', 'TUN', 'Ich bin o.k.', 'Du bist o.k.', 
-  'Regeneration', 'Umgang mit Emotionen', 'Leistungsmotivation'
-];
+import {
+  B6_DIMENSIONS,
+  getScaleLabel,
+  formatAllCandidatesForLLM,
+  getB6SystemPromptSection
+} from '@/lib/b6-scale';
 
 function AnalysisSelector({ onSelect, onCancel }) {
   const { savedAnalyses } = useSession();
@@ -80,11 +81,6 @@ function AnalysisSelector({ onSelect, onCancel }) {
 }
 
 function CandidateCard({ candidate, onUpdate, onRemove, isExpanded, onToggle }) {
-  const getScaleLabel = (value) => {
-    const labels = ['E3', 'E2', 'E1', 'S1', 'S2', 'S3', 'Ü'];
-    return labels[value - 1];
-  };
-
   return (
     <div className="border-2 border-iron-200 rounded-lg hover:border-primary/30 transition-colors overflow-hidden">
       <button onClick={onToggle} className="w-full px-4 py-3 bg-iron-50 flex items-center justify-between hover:bg-iron-100 transition-colors">
@@ -97,7 +93,7 @@ function CandidateCard({ candidate, onUpdate, onRemove, isExpanded, onToggle }) 
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-1 text-xs">
             {Object.entries(candidate.dimensions).slice(0, 4).map(([dim, val]) => (
-              <span key={dim} className={`px-1.5 py-0.5 rounded ${val <= 3 ? 'bg-red-100 text-red-700' : val <= 6 ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>
+              <span key={dim} className={`px-1.5 py-0.5 rounded ${val <= 2 ? 'bg-red-100 text-red-700' : val <= 4 ? 'bg-yellow-100 text-yellow-700' : val <= 6 ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'}`}>
                 {dim.substring(0, 3)}: {getScaleLabel(val)}
               </span>
             ))}
@@ -181,51 +177,34 @@ function InterpretationContent() {
     });
   };
 
-  const getScaleLabel = (value) => {
-    const labels = ['E3', 'E2', 'E1', 'S1', 'S2', 'S3', 'Ü'];
-    return labels[value - 1];
-  };
+  // Formatierte Kandidatenübersicht für das LLM
+  const candidatesOverview = formatAllCandidatesForLLM(sessionData.candidates);
 
-  const candidatesOverview = sessionData.candidates.map(candidate => {
-    const dims = Object.entries(candidate.dimensions).map(([dim, val]) => `${dim}: ${getScaleLabel(val)}`).join(', ');
-    return `${candidate.name}: ${dims}`;
-  }).join('\n');
-
+  // Verbesserter System-Prompt mit eindeutiger Skalen-Definition
   const systemPrompt = `Du bist ein Experte für die Interpretation psychometrischer Testergebnisse und berufliche Eignungsdiagnostik.
 
-KONTEXT - ANFORDERUNGEN:
+KONTEXT - ANFORDERUNGEN FÜR DIE POSITION:
 ${sessionData.requirements || 'Keine Anforderungen definiert'}
 
-KANDIDATEN UND B6 KOMPAKT ERGEBNISSE:
-${candidatesOverview || 'Noch keine Kandidaten eingegeben'}
+KANDIDATEN UND IHRE B6 KOMPAKT TESTERGEBNISSE:
+${candidatesOverview}
 
-B6 KOMPAKT DIMENSIONEN:
-- ICH: Durchsetzungsfähigkeit, Eigeninitiative
-- WIR: Teamorientierung, Kooperationsbereitschaft, Einfühlungsvermögen
-- DENKEN: Analytisches Denken, Problemlösefähigkeit, konzeptionelles Arbeiten
-- TUN: Umsetzungsorientierung, Handlungsbereitschaft, Pragmatismus
-- Ich bin o.k.: Selbstwert, emotionale Stabilität, Resilienz
-- Du bist o.k.: Vertrauen in andere, positive Grundhaltung gegenüber anderen
-- Regeneration: Stressresistenz, Erholungsfähigkeit, Work-Life-Balance
-- Umgang mit Emotionen: Emotionsregulation, Gelassenheit, Selbstkontrolle
-- Leistungsmotivation: Leistungsbereitschaft, Ehrgeiz, Zielorientierung
+${getB6SystemPromptSection()}
 
-SKALA-INTERPRETATION:
-- E3, E2, E1: Entwicklungsbereich - niedriger als Durchschnitt
-- S1, S2, S3: Stärkebereich - durchschnittlich bis überdurchschnittlich
-- Ü: Mögliche Übersteigerung - sehr hohe Ausprägung, kann kontraproduktiv sein
-
-WICHTIGE PRINZIPIEN:
-1. MESSFEHLER: Keine absoluten Aussagen, sondern Wahrscheinlichkeiten
-2. SELBSTEINSCHÄTZUNG: Betone immer, dass dies die Selbstsicht der Person ist
-3. NORMORIENTIERUNG: Ausprägungen sind relativ zur Normstichprobe
-4. KEINE ÜBERINTERPRETATION: Fokus auf relevante Dimensionen
+INTERPRETATIONSPRINZIPIEN:
+1. MESSFEHLER: Alle Werte sind mit Messungenauigkeit behaftet - keine absoluten Aussagen
+2. SELBSTEINSCHÄTZUNG: Es handelt sich um die Selbstsicht der Person, nicht um objektive Fakten
+3. NORMORIENTIERUNG: Alle Ausprägungen sind RELATIV zur Normstichprobe
+4. KEINE ÜBERINTERPRETATION: Fokus auf die für die Position relevanten Dimensionen
 5. PROFILE UND MUSTER: Betrachte Kombinationen von Dimensionen
-6. CHANCEN/RISIKEN: Jedes Ergebnis kann je nach Kontext beides sein
-7. ANFORDERUNGSBEZUG: Stelle Bezug zu den Anforderungen her
-8. DIFFERENZIERTE SPRACHE: Keine Pauschalbewertungen
+6. KONTEXTABHÄNGIG: Ob ein Wert "gut" oder "schlecht" ist, hängt von den Anforderungen ab
+7. ANFORDERUNGSBEZUG: Stelle IMMER Bezug zu den definierten Anforderungen her
 
-STIL: Professionell, keine Emojis, kurz und prägnant (3-5 Sätze), Deutschsprachig`;
+BEISPIEL FÜR KORREKTE INTERPRETATION:
+- "Max Mustermann zeigt bei ICH einen Wert von E2 (unterdurchschnittlich). Dies deutet auf eine eher zurückhaltende, anpassungsbereite Art hin. Für eine Führungsposition könnte dies ein Entwicklungsbereich sein."
+- "Bei WIR liegt der Wert bei S3 (überdurchschnittlich), was auf hohe Teamorientierung und Kooperationsbereitschaft hindeutet - passend für die kollaborative Arbeitsumgebung."
+
+STIL: Professionell, keine Emojis, kurz und prägnant (3-5 Sätze pro Antwort), Deutschsprachig`;
 
   const handleSendMessage = async (message) => {
     if (!sessionData.apiKey) { alert('Bitte API-Key in den Einstellungen hinterlegen'); return; }
@@ -258,9 +237,13 @@ STIL: Professionell, keine Emojis, kurz und prägnant (3-5 Sätze), Deutschsprac
     setIsLoading(true);
 
     const summaryPrompt = `Fasse die wichtigsten Interpretationsergebnisse strukturiert zusammen:
-1. Kernergebnisse pro Kandidat (3-4 Hauptpunkte)
-2. Stärken und Chancen bezogen auf die Anforderungen
-3. Entwicklungsbereiche und mögliche Risiken
+
+1. KERNERGEBNISSE pro Kandidat (3-4 Hauptpunkte, mit Bezug auf die Skala)
+2. STÄRKEN bezogen auf die Anforderungen (welche Dimensionen passen gut?)
+3. ENTWICKLUNGSBEREICHE und mögliche Risiken (welche Dimensionen könnten kritisch sein?)
+4. EMPFEHLUNGEN für das weitere Vorgehen
+
+Verwende die korrekten Skalenlabels (E3, E2, E1, S1, S2, S3, Ü) und ihre Bedeutung.
 Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
 
     try {

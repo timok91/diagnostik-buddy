@@ -12,12 +12,25 @@ import {
   WidthType,
   ShadingType,
   LevelFormat,
+  Header,
+  ImageRun,
+  VerticalAlign,
 } from 'docx';
 
-// Helper: Scale labels
-const getScaleLabel = (value) => {
-  const labels = ['E3', 'E2', 'E1', 'S1', 'S2', 'S3', 'Ü'];
-  return labels[value - 1] || '-';
+// Import der zentralen B6-Scale Bibliothek
+import { B6_DIMENSIONS, getScaleLabel } from '@/lib/b6-scale';
+
+// Helper: Fetch logo as ArrayBuffer
+const fetchLogo = async () => {
+  try {
+    const response = await fetch('/logo.png');
+    if (!response.ok) throw new Error('Logo not found');
+    const arrayBuffer = await response.arrayBuffer();
+    return new Uint8Array(arrayBuffer);
+  } catch (error) {
+    console.warn('Logo konnte nicht geladen werden:', error);
+    return null;
+  }
 };
 
 // Helper: Parse text content into paragraphs
@@ -151,8 +164,96 @@ const createDocumentConfig = () => ({
   },
 });
 
-// Create header section
-const createHeader = (title, subtitle, date) => [
+// Create document header with logo
+const createDocumentHeader = (logoData) => {
+  if (!logoData) {
+    // Fallback ohne Logo
+    return new Header({
+      children: [
+        new Paragraph({
+          alignment: AlignmentType.RIGHT,
+          children: [
+            new TextRun({ text: 'Balanced Six', color: '26358B', bold: true, size: 20 }),
+            new TextRun({ text: ' | B6 Kompakt', color: '999999', size: 20 }),
+          ],
+        }),
+      ],
+    });
+  }
+
+  // Header mit Logo rechts
+  return new Header({
+    children: [
+      new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+          top: { style: BorderStyle.NONE },
+          bottom: { style: BorderStyle.NONE },
+          left: { style: BorderStyle.NONE },
+          right: { style: BorderStyle.NONE },
+          insideHorizontal: { style: BorderStyle.NONE },
+          insideVertical: { style: BorderStyle.NONE },
+        },
+        rows: [
+          new TableRow({
+            children: [
+              // Linke Zelle: Text
+              new TableCell({
+                width: { size: 80, type: WidthType.PERCENTAGE },
+                verticalAlign: VerticalAlign.CENTER,
+                borders: {
+                  top: { style: BorderStyle.NONE },
+                  bottom: { style: BorderStyle.NONE },
+                  left: { style: BorderStyle.NONE },
+                  right: { style: BorderStyle.NONE },
+                },
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: 'Balanced Six', color: '26358B', bold: true, size: 20 }),
+                      new TextRun({ text: ' | B6 Kompakt Assistent', color: '999999', size: 20 }),
+                    ],
+                  }),
+                ],
+              }),
+              // Rechte Zelle: Logo
+              new TableCell({
+                width: { size: 20, type: WidthType.PERCENTAGE },
+                verticalAlign: VerticalAlign.CENTER,
+                borders: {
+                  top: { style: BorderStyle.NONE },
+                  bottom: { style: BorderStyle.NONE },
+                  left: { style: BorderStyle.NONE },
+                  right: { style: BorderStyle.NONE },
+                },
+                children: [
+                  new Paragraph({
+                    alignment: AlignmentType.RIGHT,
+                    children: [
+                      new ImageRun({
+                        type: 'png',
+                        data: logoData,
+                        transformation: { width: 50, height: 50 },
+                        altText: {
+                          title: 'Balanced Six Logo',
+                          description: 'B6 Kompakt Logo',
+                          name: 'logo',
+                        },
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+};
+
+// Create title section
+const createTitleSection = (title, subtitle, date) => [
   new Paragraph({
     alignment: AlignmentType.CENTER,
     children: [
@@ -197,6 +298,7 @@ const createFooter = () => [
 // =====================
 export const generateRequirementsDocx = async (analysis) => {
   const date = new Date().toLocaleDateString('de-DE');
+  const logoData = await fetchLogo();
   
   const doc = new Document({
     ...createDocumentConfig(),
@@ -207,8 +309,11 @@ export const generateRequirementsDocx = async (analysis) => {
           margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
         },
       },
+      headers: {
+        default: createDocumentHeader(logoData),
+      },
       children: [
-        ...createHeader('Anforderungsprofil', analysis.name || 'Unbenannte Analyse', date),
+        ...createTitleSection('Anforderungsprofil', analysis.name || 'Unbenannte Analyse', date),
         
         new Paragraph({
           heading: HeadingLevel.HEADING_1,
@@ -231,6 +336,7 @@ export const generateRequirementsDocx = async (analysis) => {
 export const generateInterpretationDocx = async (data) => {
   const { name, analysisName, requirements, candidates, interpretation } = data;
   const date = new Date().toLocaleDateString('de-DE');
+  const logoData = await fetchLogo();
   
   // Build candidate table if candidates exist
   const candidateSection = [];
@@ -242,21 +348,22 @@ export const generateInterpretationDocx = async (data) => {
       })
     );
     
-    // Table header
+    // Table header - verwende die zentralen B6_DIMENSIONS
     const headerCells = [
       new TableCell({
-        children: [new Paragraph({ children: [new TextRun({ text: 'Kandidat', bold: true })] })],
+        children: [new Paragraph({ children: [new TextRun({ text: 'Kandidat', bold: true, color: 'FFFFFF' })] })],
         shading: { fill: '26358B', type: ShadingType.CLEAR },
         margins: { top: 80, bottom: 80, left: 120, right: 120 },
       }),
     ];
     
-    const dimensions = ['ICH', 'WIR', 'DENKEN', 'TUN', 'Ich bin o.k.', 'Du bist o.k.', 'Regeneration', 'Umgang m. Emotionen', 'Leistungsmotivation'];
-    dimensions.forEach(dim => {
+    // Kurze Labels für die Tabelle
+    const shortLabels = ['ICH', 'WIR', 'DENKEN', 'TUN', 'Ich o.k.', 'Du o.k.', 'Regen.', 'Emotion.', 'Leist.'];
+    shortLabels.forEach(dim => {
       headerCells.push(new TableCell({
         children: [new Paragraph({ 
           alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: dim.length > 10 ? dim.substring(0, 8) + '.' : dim, bold: true, size: 16, color: 'FFFFFF' })] 
+          children: [new TextRun({ text: dim, bold: true, size: 16, color: 'FFFFFF' })] 
         })],
         shading: { fill: '26358B', type: ShadingType.CLEAR },
         margins: { top: 80, bottom: 80, left: 60, right: 60 },
@@ -265,7 +372,7 @@ export const generateInterpretationDocx = async (data) => {
     
     const rows = [new TableRow({ children: headerCells })];
     
-    // Candidate rows
+    // Candidate rows - verwende getScaleLabel aus der zentralen Bibliothek
     candidates.forEach((candidate, idx) => {
       const cells = [
         new TableCell({
@@ -275,10 +382,10 @@ export const generateInterpretationDocx = async (data) => {
         }),
       ];
       
-      const dimKeys = ['ICH', 'WIR', 'DENKEN', 'TUN', 'Ich bin o.k.', 'Du bist o.k.', 'Regeneration', 'Umgang mit Emotionen', 'Leistungsmotivation'];
-      dimKeys.forEach(dim => {
+      // Verwende B6_DIMENSIONS aus der zentralen Bibliothek
+      B6_DIMENSIONS.forEach(dim => {
         const value = candidate.dimensions?.[dim] || 4;
-        const label = getScaleLabel(value);
+        const label = getScaleLabel(value); // Zentrale Funktion
         cells.push(new TableCell({
           children: [new Paragraph({ 
             alignment: AlignmentType.CENTER,
@@ -297,7 +404,15 @@ export const generateInterpretationDocx = async (data) => {
       rows,
     }));
     
-    candidateSection.push(new Paragraph({ children: [], spacing: { after: 240 } }));
+    // Legende für die Skala
+    candidateSection.push(new Paragraph({ children: [], spacing: { after: 120 } }));
+    candidateSection.push(new Paragraph({
+      children: [
+        new TextRun({ text: 'Skalenlegende: ', bold: true, size: 18 }),
+        new TextRun({ text: 'E3/E2 = unterdurchschnittlich | E1/S1 = durchschnittlich | S2/S3 = überdurchschnittlich | Ü = Übersteigerung', size: 18, color: '666666' }),
+      ],
+      spacing: { after: 240 },
+    }));
   }
   
   const doc = new Document({
@@ -309,8 +424,11 @@ export const generateInterpretationDocx = async (data) => {
           margin: { top: 1080, right: 1080, bottom: 1080, left: 1080 },
         },
       },
+      headers: {
+        default: createDocumentHeader(logoData),
+      },
       children: [
-        ...createHeader('Interpretationsbericht', name || analysisName || 'Unbenannt', date),
+        ...createTitleSection('Interpretationsbericht', name || analysisName || 'Unbenannt', date),
         
         new Paragraph({
           children: [
@@ -362,11 +480,12 @@ export const generateInterpretationDocx = async (data) => {
 export const generateInterviewDocx = async (data) => {
   const { name, analysisName, requirements, interpretation, candidates, guide } = data;
   const date = new Date().toLocaleDateString('de-DE');
+  const logoData = await fetchLogo();
   const hasInterpretation = interpretation && interpretation.length > 0;
   const hasCandidates = candidates && candidates.length > 0;
   
   const sections = [
-    ...createHeader('Interviewleitfaden', name || analysisName || 'Unbenannt', date),
+    ...createTitleSection('Interviewleitfaden', name || analysisName || 'Unbenannt', date),
     
     new Paragraph({
       children: [
@@ -442,6 +561,9 @@ export const generateInterviewDocx = async (data) => {
           size: { width: 11906, height: 16838 }, // A4
           margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
         },
+      },
+      headers: {
+        default: createDocumentHeader(logoData),
       },
       children: sections,
     }],
