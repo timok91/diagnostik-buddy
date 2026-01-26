@@ -205,7 +205,7 @@ B6 KOMPAKT DIMENSIONEN:
 - DENKEN: Analytisches Denken, Problemlösefähigkeit, konzeptionelles Arbeiten
 - TUN: Umsetzungsorientierung, Handlungsbereitschaft, Pragmatismus
 - Ich bin o.k.: Selbstwert, emotionale Stabilität, Resilienz
-- Du bist o.k.: Vertrauen in andere, positive Grundhaltung
+- Du bist o.k.: Vertrauen in andere, positive Grundhaltung gegenüber anderen
 - Regeneration: Stressresistenz, Erholungsfähigkeit, Work-Life-Balance
 - Umgang mit Emotionen: Emotionsregulation, Gelassenheit, Selbstkontrolle
 - Leistungsmotivation: Leistungsbereitschaft, Ehrgeiz, Zielorientierung

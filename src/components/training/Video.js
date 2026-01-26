@@ -2,19 +2,28 @@
 import { useState } from 'react';
 import { Play, ExternalLink } from 'lucide-react';
 
-function getVimeoId(url) {
-  // Unterstützt verschiedene Vimeo-URL-Formate
-  const patterns = [
+function parseVimeoUrl(url) {
+  // Extract video ID
+  const idPatterns = [
     /vimeo\.com\/(\d+)/,
     /vimeo\.com\/video\/(\d+)/,
     /player\.vimeo\.com\/video\/(\d+)/,
   ];
   
-  for (const pattern of patterns) {
+  let videoId = null;
+  for (const pattern of idPatterns) {
     const match = url.match(pattern);
-    if (match) return match[1];
+    if (match) {
+      videoId = match[1];
+      break;
+    }
   }
-  return null;
+  
+  // Extract hash parameter (h=...) for private videos
+  const hashMatch = url.match(/[?&]h=([a-zA-Z0-9]+)/);
+  const hash = hashMatch ? hashMatch[1] : null;
+  
+  return { videoId, hash };
 }
 
 function isVimeoUrl(src) {
@@ -24,10 +33,16 @@ function isVimeoUrl(src) {
 export default function Video({ src, title, poster }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const isVimeo = isVimeoUrl(src);
-  const vimeoId = isVimeo ? getVimeoId(src) : null;
+  const { videoId, hash } = isVimeo ? parseVimeoUrl(src) : { videoId: null, hash: null };
   
   // Vimeo Embed
-  if (isVimeo && vimeoId) {
+  if (isVimeo && videoId) {
+    // Build embed URL with hash if available
+    let embedUrl = `https://player.vimeo.com/video/${videoId}?title=0&byline=0&portrait=0`;
+    if (hash) {
+      embedUrl = `https://player.vimeo.com/video/${videoId}?h=${hash}&title=0&byline=0&portrait=0`;
+    }
+    
     return (
       <div className="my-8">
         {title && (
@@ -38,10 +53,10 @@ export default function Video({ src, title, poster }) {
         )}
         <div className="relative w-full rounded-xl overflow-hidden shadow-lg bg-gray-900" style={{ paddingBottom: '56.25%' }}>
           <iframe
-            src={`https://player.vimeo.com/video/${vimeoId}?h=0&title=0&byline=0&portrait=0`}
+            src={embedUrl}
             className="absolute inset-0 w-full h-full"
             frameBorder="0"
-            allow="autoplay; fullscreen; picture-in-picture"
+            allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
             allowFullScreen
             title={title || 'Video'}
           />

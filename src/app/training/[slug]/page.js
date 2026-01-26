@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote/rsc';
+import remarkGfm from 'remark-gfm';
 import { getArticleBySlug, getAllSlugs, getAdjacentArticles } from '@/lib/training';
 import { ArticleLayout } from '@/components/training';
 import { Callout, Video, KeyTakeaway } from '@/components/training';
@@ -38,9 +39,9 @@ const mdxComponents = {
     <pre className="my-6 p-4 bg-gray-900 text-gray-100 rounded-xl overflow-x-auto text-sm" {...props} />
   ),
   table: (props) => (
-  <div className="my-6 overflow-x-auto">
-    <table className="min-w-full divide-y divide-iron-200 border border-iron-200 rounded-lg overflow-hidden" {...props} />
-  </div>
+    <div className="my-6 overflow-x-auto">
+      <table className="min-w-full divide-y divide-iron-200 border border-iron-200 rounded-lg overflow-hidden" {...props} />
+    </div>
   ),
   thead: (props) => <thead className="bg-iron-50" {...props} />,
   tbody: (props) => <tbody className="divide-y divide-iron-200 bg-white" {...props} />,
@@ -90,7 +91,15 @@ export default async function ArticlePage({ params }) {
   
   return (
     <ArticleLayout article={article} prevArticle={prev} nextArticle={next}>
-      <MDXRemote source={article.content} components={mdxComponents} />
+      <MDXRemote 
+        source={article.content} 
+        components={mdxComponents}
+        options={{
+          mdxOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        }}
+      />
     </ArticleLayout>
   );
 }

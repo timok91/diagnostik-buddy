@@ -7,7 +7,8 @@ const STORAGE_KEYS = {
   analyses: 'b6-saved-analyses',
   interpretations: 'b6-saved-interpretations',
   interviews: 'b6-saved-interviews',
-  apiKey: 'b6-api-key'
+  apiKey: 'b6-api-key',
+  session: 'b6-current-session'
 };
 
 // Leere Session-Vorlage
@@ -79,7 +80,25 @@ export function SessionProvider({ children }) {
       
       // API-Key laden
       const storedApiKey = localStorage.getItem(STORAGE_KEYS.apiKey);
-      if (storedApiKey) {
+      
+      // Aktuelle Session laden
+      const storedSession = localStorage.getItem(STORAGE_KEYS.session);
+      if (storedSession) {
+        try {
+          const parsedSession = JSON.parse(storedSession);
+          // API-Key aus separatem Storage verwenden (falls vorhanden)
+          setSessionData({
+            ...emptySession,
+            ...parsedSession,
+            apiKey: storedApiKey || parsedSession.apiKey || ''
+          });
+        } catch (e) {
+          console.error('Fehler beim Laden der Session:', e);
+          if (storedApiKey) {
+            setSessionData(prev => ({ ...prev, apiKey: storedApiKey }));
+          }
+        }
+      } else if (storedApiKey) {
         setSessionData(prev => ({ ...prev, apiKey: storedApiKey }));
       }
       
@@ -112,6 +131,15 @@ export function SessionProvider({ children }) {
     }
   }, [sessionData.apiKey, isHydrated]);
 
+  // Session-Daten persistieren (ohne apiKey, der wird separat gespeichert)
+  useEffect(() => {
+    if (isHydrated && typeof window !== 'undefined') {
+      const sessionToStore = { ...sessionData };
+      delete sessionToStore.apiKey; // API-Key separat speichern
+      localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(sessionToStore));
+    }
+  }, [sessionData, isHydrated]);
+
   // Session aktualisieren
   const updateSession = (updates) => {
     setSessionData(prev => ({ ...prev, ...updates }));
@@ -119,10 +147,15 @@ export function SessionProvider({ children }) {
 
   // Session zurücksetzen
   const resetSession = () => {
-    setSessionData(prev => ({
+    const newSession = {
       ...emptySession,
-      apiKey: prev.apiKey,
-    }));
+      apiKey: sessionData.apiKey,
+    };
+    setSessionData(newSession);
+    // Auch aus localStorage entfernen
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEYS.session);
+    }
   };
 
   // Modul starten (ohne kompletten Reset)

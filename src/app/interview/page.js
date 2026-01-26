@@ -4,8 +4,73 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import ChatInterface from '@/components/ChatInterface';
 import { 
-  CheckCircle, AlertCircle, Home, ArrowRight, FileText, Download, Info, Save
+  CheckCircle, AlertCircle, Home, ArrowRight, FileText, Download, Info, Save, Users, X, FileIcon, ChevronDown
 } from 'lucide-react';
+import { generateInterviewDocx, downloadDocx } from '@/lib/docx-export';
+
+function DownloadDropdown({ onDownloadTxt, onDownloadDocx }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleDocxDownload = async () => {
+    setIsLoading(true);
+    try {
+      await onDownloadDocx();
+    } catch (error) {
+      console.error('DOCX Error:', error);
+      alert('Fehler beim Erstellen der Word-Datei.');
+    } finally {
+      setIsLoading(false);
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="relative flex-1">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={isLoading}
+        className="w-full px-6 py-3 bg-accent-100 text-accent-300 border-2 border-accent-200 rounded-lg hover:bg-accent-50 flex items-center justify-center gap-2"
+      >
+        {isLoading ? (
+          <div className="w-4 h-4 border-2 border-accent-300 border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <Download className="w-4 h-4" />
+        )}
+        Herunterladen
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-iron-200 z-20 overflow-hidden">
+            <button
+              onClick={() => { onDownloadTxt(); setIsOpen(false); }}
+              className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-iron-50 flex items-center gap-3"
+            >
+              <FileText className="w-4 h-4 text-gray-500" />
+              <div>
+                <div className="font-medium">Text (.txt)</div>
+                <div className="text-xs text-gray-500">Einfaches Textformat</div>
+              </div>
+            </button>
+            <button
+              onClick={handleDocxDownload}
+              className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-iron-50 flex items-center gap-3 border-t border-iron-100"
+            >
+              <FileIcon className="w-4 h-4 text-blue-600" />
+              <div>
+                <div className="font-medium">Word (.docx)</div>
+                <div className="text-xs text-gray-500">Formatiertes Dokument</div>
+              </div>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function AnalysisSelector({ onSelect, onCancel }) {
   const { savedAnalyses } = useSession();
@@ -53,13 +118,92 @@ function AnalysisSelector({ onSelect, onCancel }) {
   );
 }
 
+function InterpretationSelector({ analysisId, analysisName, onSelect, onSkip, onCancel }) {
+  const { savedInterpretations } = useSession();
+  
+  // Filter interpretations for the selected analysis
+  const relevantInterpretations = savedInterpretations.filter(i => i.analysisId === analysisId);
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+        <div className="px-6 py-4 border-b border-iron-200 bg-iron-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Interpretation hinzufügen (optional)</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Möchten Sie eine bestehende Profilinterpretation als zusätzlichen Kontext verwenden?
+              </p>
+            </div>
+            <button onClick={onCancel} className="p-2 hover:bg-gray-200 rounded-lg">
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+        </div>
+        
+        <div className="p-4">
+          {/* Info Box */}
+          <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-secondary-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-gray-700">
+                <p className="font-medium text-gray-900 mb-1">Analyse: {analysisName}</p>
+                <p>Wenn Sie eine Interpretation auswählen, werden die Kandidatenprofile und Interpretationsergebnisse als zusätzlicher Kontext für die Interviewfragen verwendet.</p>
+              </div>
+            </div>
+          </div>
+
+          {relevantInterpretations.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-600 mb-2">Keine Interpretationen für diese Analyse vorhanden.</p>
+              <p className="text-sm text-gray-500">Sie können trotzdem fortfahren und allgemeine Interviewfragen erstellen.</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+              {relevantInterpretations.map((interp) => (
+                <button key={interp.id} onClick={() => onSelect(interp)}
+                  className="w-full p-4 rounded-lg border-2 border-iron-200 hover:border-secondary-300 hover:bg-secondary-50 transition-all text-left">
+                  <div className="flex items-center gap-3">
+                    <Users className="w-5 h-5 text-secondary-400" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{interp.name}</h4>
+                      <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                        <span>{interp.candidates?.length || 0} Kandidat(en)</span>
+                        <span>•</span>
+                        <span>{new Date(interp.createdAt).toLocaleDateString('de-DE')}</span>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-400" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 border-t border-iron-200 bg-iron-50 flex gap-3">
+          <button onClick={onCancel} className="flex-1 px-4 py-2 border border-iron-300 text-gray-700 rounded-lg hover:bg-gray-50">
+            Zurück
+          </button>
+          <button onClick={onSkip} className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+            Ohne Interpretation fortfahren
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function InterviewContent() {
   const { 
-    sessionData, updateSession, loadAnalysis, saveInterview, nextModule, isHydrated 
+    sessionData, updateSession, loadAnalysis, loadInterpretation, saveInterview, nextModule, isHydrated 
   } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showAnalysisSelector, setShowAnalysisSelector] = useState(false);
+  const [showInterpretationSelector, setShowInterpretationSelector] = useState(false);
+  const [pendingAnalysis, setPendingAnalysis] = useState(null);
   const [showGuide, setShowGuide] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [interviewGuide, setInterviewGuide] = useState('');
@@ -79,8 +223,36 @@ function InterviewContent() {
   }, [sessionData.analysisName]);
 
   const handleSelectAnalysis = (analysis) => {
-    loadAnalysis(analysis.id);
+    setPendingAnalysis(analysis);
     setShowAnalysisSelector(false);
+    setShowInterpretationSelector(true);
+  };
+
+  const handleSelectInterpretation = (interpretation) => {
+    // Load the analysis first
+    if (pendingAnalysis) {
+      loadAnalysis(pendingAnalysis.id);
+    }
+    // Then load the interpretation (this will also set candidates, etc.)
+    loadInterpretation(interpretation.id);
+    setShowInterpretationSelector(false);
+    setPendingAnalysis(null);
+  };
+
+  const handleSkipInterpretation = () => {
+    // Just load the analysis without interpretation
+    if (pendingAnalysis) {
+      loadAnalysis(pendingAnalysis.id);
+    }
+    setShowInterpretationSelector(false);
+    setPendingAnalysis(null);
+  };
+
+  const handleCancelInterpretationSelector = () => {
+    // Go back to analysis selector
+    setShowInterpretationSelector(false);
+    setPendingAnalysis(null);
+    setShowAnalysisSelector(true);
   };
 
   const getScaleLabel = (value) => {
@@ -93,27 +265,32 @@ function InterviewContent() {
         const dims = Object.entries(candidate.dimensions).map(([dim, val]) => `${dim}: ${getScaleLabel(val)}`).join(', ');
         return `${candidate.name}: ${dims}`;
       }).join('\n')
-    : 'Keine Kandidaten mit Testergebnissen vorhanden';
+    : '';
 
   const hasInterpretation = sessionData.interpretation && sessionData.interpretation.length > 0;
+  const hasCandidates = sessionData.candidates && sessionData.candidates.length > 0;
 
   const systemPrompt = `Du bist ein Experte für strukturierte Eignungsinterviews und evidenzbasierte Interviewführung.
 
 KONTEXT - ANFORDERUNGEN:
 ${sessionData.requirements || 'Keine Anforderungen definiert'}
 
-${hasInterpretation ? `INTERPRETATION DER TESTERGEBNISSE:\n${sessionData.interpretation}` : ''}
+${hasInterpretation ? `INTERPRETATION DER TESTERGEBNISSE:
+${sessionData.interpretation}
 
-${sessionData.candidates.length > 0 ? `KANDIDATEN UND B6 ERGEBNISSE:\n${candidatesOverview}` : ''}
+` : ''}${hasCandidates ? `KANDIDATEN UND B6 KOMPAKT ERGEBNISSE:
+${candidatesOverview}
 
-DEINE AUFGABE:
+` : ''}DEINE AUFGABE:
 Hilf dem Anwender dabei, sich optimal auf strukturierte Eignungsinterviews vorzubereiten.
+${hasCandidates ? 'Berücksichtige dabei die spezifischen Profile der Kandidaten und entwickle gezielte Fragen, um die Testergebnisse im Interview zu validieren.' : ''}
 
 WISSENSCHAFTLICHE GRUNDLAGEN:
 1. VERHALTENSBASIERTE FRAGEN (mind. 70%): Vergangenheitsorientiert, STAR-Methode
 2. SITUATIVE/HYPOTHETISCHE FRAGEN (max. 30%): Ergänzend
 3. STRUKTURIERUNG: Thematische Blöcke, 3-5 Kernfragen pro Bereich
 4. VERMEIDUNG VON BIAS: Keine Suggestivfragen, keine diskriminierenden Fragen
+${hasCandidates ? '5. PROFILVALIDIERUNG: Gezielte Fragen zur Überprüfung auffälliger Testergebnisse' : ''}
 
 STIL: Professionell, keine Emojis, konkrete Fragen, Deutschsprachig`;
 
@@ -150,7 +327,7 @@ STIL: Professionell, keine Emojis, konkrete Fragen, Deutschsprachig`;
 STRUKTUR:
 1. EINLEITUNG & RAHMENBEDINGUNGEN
 2. HAUPTFRAGEN (thematisch gegliedert, 3-5 verhaltensbasierte Hauptfragen pro Bereich)
-3. ABSCHLUSS
+${hasCandidates ? '3. KANDIDATENSPEZIFISCHE FRAGEN (basierend auf den Testergebnissen)\n4. ABSCHLUSS' : '3. ABSCHLUSS'}
 
 FORMAT: Klare Gliederung, konkrete Fragen, direkt verwendbar.`;
 
@@ -182,19 +359,24 @@ FORMAT: Klare Gliederung, konkrete Fragen, direkt verwendbar.`;
     setShowSaveModal(false);
   };
 
-  const handleDownloadGuide = () => {
+  const handleDownloadGuideTxt = () => {
     const content = `INTERVIEWLEITFADEN
 ${'='.repeat(80)}
 
 Anforderungsanalyse: ${sessionData.analysisName || 'Nicht benannt'}
-Erstellt: ${new Date().toLocaleDateString('de-DE')}
+${hasInterpretation ? `Interpretation: Ja (${sessionData.candidates?.length || 0} Kandidaten)\n` : ''}Erstellt: ${new Date().toLocaleDateString('de-DE')}
 
 ${'='.repeat(80)}
 
 ANFORDERUNGEN:
 ${sessionData.requirements}
 
-${'='.repeat(80)}
+${hasInterpretation ? `${'='.repeat(80)}
+
+INTERPRETATIONSERGEBNISSE:
+${sessionData.interpretation}
+
+` : ''}${'='.repeat(80)}
 
 ${interviewGuide}
 
@@ -220,6 +402,23 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadGuideDocx = async () => {
+    try {
+      const blob = await generateInterviewDocx({
+        name: `Interview: ${sessionData.analysisName}`,
+        analysisName: sessionData.analysisName,
+        requirements: sessionData.requirements,
+        interpretation: sessionData.interpretation,
+        candidates: sessionData.candidates,
+        guide: interviewGuide,
+      });
+      downloadDocx(blob, `Interviewleitfaden_${sessionData.analysisName || 'Export'}_${Date.now()}`);
+    } catch (error) {
+      console.error('DOCX Error:', error);
+      alert('Fehler beim Erstellen der Word-Datei.');
+    }
+  };
+
   const handleNextModule = () => {
     // Auto-save before proceeding
     if (!isSaved && interviewGuide) {
@@ -234,6 +433,16 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
     }
   };
 
+  const handleChangeAnalysis = () => {
+    // Reset interpretation data when changing analysis
+    updateSession({
+      selectedInterpretationId: null,
+      interpretation: '',
+      candidates: [],
+    });
+    setShowAnalysisSelector(true);
+  };
+
   if (!isHydrated) {
     return (
       <div className="min-h-screen bg-iron-100 flex items-center justify-center">
@@ -244,7 +453,22 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
 
   return (
     <div className="min-h-screen bg-iron-100 flex flex-col">
-      {showAnalysisSelector && <AnalysisSelector onSelect={handleSelectAnalysis} onCancel={() => router.push('/')} />}
+      {showAnalysisSelector && (
+        <AnalysisSelector 
+          onSelect={handleSelectAnalysis} 
+          onCancel={() => router.push('/')} 
+        />
+      )}
+      
+      {showInterpretationSelector && pendingAnalysis && (
+        <InterpretationSelector
+          analysisId={pendingAnalysis.id}
+          analysisName={pendingAnalysis.name}
+          onSelect={handleSelectInterpretation}
+          onSkip={handleSkipInterpretation}
+          onCancel={handleCancelInterpretationSelector}
+        />
+      )}
 
       <header className="bg-white border-b border-iron-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -268,7 +492,7 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                   Nicht gespeichert
                 </span>
               )}
-              <button onClick={() => setShowAnalysisSelector(true)}
+              <button onClick={handleChangeAnalysis}
                 className="px-4 py-2 text-sm border border-iron-300 text-gray-700 rounded-lg hover:bg-iron-50 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 Analyse wechseln
@@ -278,23 +502,45 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
         </div>
       </header>
 
-      {!hasInterpretation && (
-        <div className="max-w-6xl mx-auto w-full px-6 pt-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-            <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-amber-800 font-medium">Empfehlung: Profilinterpretation durchführen</p>
-              <p className="text-sm text-amber-700 mt-1">Für optimale Interviewfragen empfehlen wir, vorher eine Profilinterpretation durchzuführen.</p>
-              <button onClick={() => router.push('/interpretation')} className="mt-2 text-sm text-amber-800 font-medium hover:underline">
-                Zur Profilinterpretation →
-              </button>
-            </div>
+      {/* Context Info Bar */}
+      <div className="max-w-6xl mx-auto w-full px-6 pt-4">
+        <div className={`rounded-lg p-4 flex items-start gap-3 ${hasInterpretation ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
+          <Info className={`w-5 h-5 flex-shrink-0 mt-0.5 ${hasInterpretation ? 'text-green-600' : 'text-amber-600'}`} />
+          <div className="flex-1">
+            {hasInterpretation ? (
+              <>
+                <p className="text-sm text-green-800 font-medium">Interpretation als Kontext geladen</p>
+                <p className="text-sm text-green-700 mt-1">
+                  {sessionData.candidates?.length || 0} Kandidat(en) mit Testergebnissen werden berücksichtigt.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-amber-800 font-medium">Keine Interpretation ausgewählt</p>
+                <p className="text-sm text-amber-700 mt-1">
+                  Sie können allgemeine Interviewfragen basierend auf den Anforderungen erstellen.
+                  {' '}
+                  <button 
+                    onClick={handleChangeAnalysis}
+                    className="font-medium underline hover:no-underline"
+                  >
+                    Analyse & Interpretation ändern
+                  </button>
+                </p>
+              </>
+            )}
           </div>
+          {hasInterpretation && (
+            <div className="flex items-center gap-2 text-sm text-green-700">
+              <Users className="w-4 h-4" />
+              <span>{sessionData.candidates?.map(c => c.name).join(', ')}</span>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-6">
-        <div className="bg-white rounded-xl shadow-sm border border-iron-200 overflow-hidden flex flex-col h-[calc(100vh-280px)]">
+        <div className="bg-white rounded-xl shadow-sm border border-iron-200 overflow-hidden flex flex-col h-[calc(100vh-320px)]">
           
           {/* Interview Guide Modal */}
           {showGuide && (
@@ -307,9 +553,7 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                       <h3 className="text-2xl font-bold text-primary">Interviewleitfaden</h3>
                     </div>
                     <button onClick={() => setShowGuide(false)} className="text-gray-400 hover:text-gray-600">
-                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <X className="w-6 h-6" />
                     </button>
                   </div>
                 </div>
@@ -328,11 +572,10 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                       <Save className="w-4 h-4" />
                       Speichern
                     </button>
-                    <button onClick={handleDownloadGuide}
-                      className="flex-1 px-6 py-3 bg-accent-100 text-accent-300 border-2 border-accent-200 rounded-lg hover:bg-accent-50 flex items-center justify-center gap-2">
-                      <Download className="w-4 h-4" />
-                      Herunterladen
-                    </button>
+                    <DownloadDropdown 
+                      onDownloadTxt={handleDownloadGuideTxt}
+                      onDownloadDocx={handleDownloadGuideDocx}
+                    />
                     <button onClick={handleNextModule} className="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2">
                       Zum Export
                       <ArrowRight className="w-4 h-4" />

@@ -1,7 +1,82 @@
 'use client';
 import { useSession, SessionProvider } from '@/context/SessionContext';
 import { useRouter } from 'next/navigation';
-import { FileText, Download, CheckCircle, Home, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, Download, CheckCircle, Home, RefreshCw, ChevronDown, FileIcon } from 'lucide-react';
+import { 
+  generateRequirementsDocx, 
+  generateInterpretationDocx, 
+  generateInterviewDocx, 
+  downloadDocx 
+} from '@/lib/docx-export';
+
+function DownloadButton({ label, onDownloadTxt, onDownloadDocx, disabled }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleDocxDownload = async () => {
+    setIsLoading(true);
+    try {
+      await onDownloadDocx();
+    } catch (error) {
+      console.error('DOCX Error:', error);
+      alert('Fehler beim Erstellen der Word-Datei. Bitte versuchen Sie den Text-Export.');
+    } finally {
+      setIsLoading(false);
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={disabled || isLoading}
+        className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+          disabled 
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+            : 'bg-primary text-white hover:bg-primary/90'
+        }`}
+      >
+        {isLoading ? (
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <Download className="w-4 h-4" />
+        )}
+        {label}
+        {!disabled && <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
+      </button>
+      
+      {isOpen && !disabled && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-iron-200 z-20 overflow-hidden">
+            <button
+              onClick={() => { onDownloadTxt(); setIsOpen(false); }}
+              className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-iron-50 flex items-center gap-3"
+            >
+              <FileText className="w-4 h-4 text-gray-500" />
+              <div>
+                <div className="font-medium">Text (.txt)</div>
+                <div className="text-xs text-gray-500">Einfaches Textformat</div>
+              </div>
+            </button>
+            <button
+              onClick={handleDocxDownload}
+              className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-iron-50 flex items-center gap-3 border-t border-iron-100"
+            >
+              <FileIcon className="w-4 h-4 text-blue-600" />
+              <div>
+                <div className="font-medium">Word (.docx)</div>
+                <div className="text-xs text-gray-500">Formatiertes Dokument</div>
+              </div>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function ExportContent() {
   const { sessionData, savedAnalyses, savedInterpretations, savedInterviews, resetSession, isHydrated } = useSession();
@@ -46,9 +121,9 @@ function ExportContent() {
     return labels[value - 1];
   };
 
-  const handleDownloadRequirements = () => {
+  // TXT Downloads
+  const handleDownloadRequirementsTxt = () => {
     if (!requirements) { alert('Keine Anforderungen vorhanden'); return; }
-
     const content = `ANFORDERUNGSPROFIL
 ${'='.repeat(80)}
 
@@ -65,9 +140,8 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
     downloadAsText(content, `Anforderungsprofil_${analysisName || 'Export'}_${Date.now()}.txt`);
   };
 
-  const handleDownloadInterpretation = () => {
+  const handleDownloadInterpretationTxt = () => {
     if (!interpretation) { alert('Keine Interpretation vorhanden'); return; }
-
     const candidateProfiles = candidates.map(candidate => {
       const dims = Object.entries(candidate.dimensions)
         .map(([dim, val]) => `  - ${dim}: ${getScaleLabel(val)}`)
@@ -109,9 +183,8 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
     downloadAsText(content, `Interpretationsbericht_${analysisName || 'Export'}_${Date.now()}.txt`);
   };
 
-  const handleDownloadInterview = () => {
+  const handleDownloadInterviewTxt = () => {
     if (!interviewGuide) { alert('Kein Interviewleitfaden vorhanden'); return; }
-
     const content = `INTERVIEWLEITFADEN
 ${'='.repeat(80)}
 
@@ -145,10 +218,58 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
     downloadAsText(content, `Interviewleitfaden_${analysisName || 'Export'}_${Date.now()}.txt`);
   };
 
-  const handleDownloadAll = () => {
-    if (hasRequirements) handleDownloadRequirements();
-    if (hasInterpretation) setTimeout(() => handleDownloadInterpretation(), 500);
-    if (hasInterview) setTimeout(() => handleDownloadInterview(), 1000);
+  // DOCX Downloads
+  const handleDownloadRequirementsDocx = async () => {
+    if (!requirements) { alert('Keine Anforderungen vorhanden'); return; }
+    const blob = await generateRequirementsDocx({
+      name: analysisName,
+      requirements,
+    });
+    downloadDocx(blob, `Anforderungsprofil_${analysisName || 'Export'}_${Date.now()}`);
+  };
+
+  const handleDownloadInterpretationDocx = async () => {
+    if (!interpretation) { alert('Keine Interpretation vorhanden'); return; }
+    const blob = await generateInterpretationDocx({
+      name: `Interpretation: ${analysisName}`,
+      analysisName,
+      requirements,
+      candidates,
+      interpretation,
+    });
+    downloadDocx(blob, `Interpretationsbericht_${analysisName || 'Export'}_${Date.now()}`);
+  };
+
+  const handleDownloadInterviewDocx = async () => {
+    if (!interviewGuide) { alert('Kein Interviewleitfaden vorhanden'); return; }
+    const blob = await generateInterviewDocx({
+      name: `Interview: ${analysisName}`,
+      analysisName,
+      requirements,
+      interpretation,
+      candidates,
+      guide: interviewGuide,
+    });
+    downloadDocx(blob, `Interviewleitfaden_${analysisName || 'Export'}_${Date.now()}`);
+  };
+
+  const handleDownloadAll = async () => {
+    if (hasRequirements) {
+      handleDownloadRequirementsTxt();
+      await handleDownloadRequirementsDocx();
+    }
+    if (hasInterpretation) {
+      setTimeout(async () => {
+        handleDownloadInterpretationTxt();
+        await handleDownloadInterpretationDocx();
+      }, 500);
+    }
+    if (hasInterview) {
+      setTimeout(async () => {
+        handleDownloadInterviewTxt();
+        await handleDownloadInterviewDocx();
+      }, 1000);
+    }
   };
 
   const handleNewSession = () => {
@@ -197,7 +318,7 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                   <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
                 <h2 className="text-3xl font-bold text-primary mb-2">Bereit zum Export</h2>
-                <p className="text-gray-600">Laden Sie Ihre erstellten Dokumente herunter</p>
+                <p className="text-gray-600">Laden Sie Ihre erstellten Dokumente als Text oder Word herunter</p>
               </div>
 
               {analysisName && (
@@ -234,11 +355,12 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                         )}
                       </div>
                     </div>
-                    <button onClick={handleDownloadRequirements} disabled={!hasRequirements}
-                      className={`ml-4 px-4 py-2 rounded-lg flex items-center gap-2 ${hasRequirements ? 'bg-primary text-white hover:bg-primary/90' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
-                      <Download className="w-4 h-4" />
-                      Download
-                    </button>
+                    <DownloadButton
+                      label="Download"
+                      onDownloadTxt={handleDownloadRequirementsTxt}
+                      onDownloadDocx={handleDownloadRequirementsDocx}
+                      disabled={!hasRequirements}
+                    />
                   </div>
                 </div>
 
@@ -257,11 +379,12 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                         )}
                       </div>
                     </div>
-                    <button onClick={handleDownloadInterpretation} disabled={!hasInterpretation}
-                      className={`ml-4 px-4 py-2 rounded-lg flex items-center gap-2 ${hasInterpretation ? 'bg-primary text-white hover:bg-primary/90' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
-                      <Download className="w-4 h-4" />
-                      Download
-                    </button>
+                    <DownloadButton
+                      label="Download"
+                      onDownloadTxt={handleDownloadInterpretationTxt}
+                      onDownloadDocx={handleDownloadInterpretationDocx}
+                      disabled={!hasInterpretation}
+                    />
                   </div>
                 </div>
 
@@ -280,11 +403,12 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                         )}
                       </div>
                     </div>
-                    <button onClick={handleDownloadInterview} disabled={!hasInterview}
-                      className={`ml-4 px-4 py-2 rounded-lg flex items-center gap-2 ${hasInterview ? 'bg-primary text-white hover:bg-primary/90' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
-                      <Download className="w-4 h-4" />
-                      Download
-                    </button>
+                    <DownloadButton
+                      label="Download"
+                      onDownloadTxt={handleDownloadInterviewTxt}
+                      onDownloadDocx={handleDownloadInterviewDocx}
+                      disabled={!hasInterview}
+                    />
                   </div>
                 </div>
               </div>
@@ -293,7 +417,7 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                 <button onClick={handleDownloadAll}
                   className="w-full bg-gradient-to-r from-primary to-secondary text-white py-4 px-6 rounded-xl hover:shadow-lg flex items-center justify-center gap-3 text-lg font-semibold group">
                   <Download className="w-5 h-5 group-hover:animate-bounce" />
-                  Alle Dokumente herunterladen
+                  Alle Dokumente herunterladen (TXT + DOCX)
                 </button>
 
                 <div className="flex gap-3">
@@ -322,7 +446,7 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
           {hasAnyContent && (
             <div className="mt-8 pt-6 border-t border-gray-200">
               <p className="text-sm text-gray-500 text-center">
-                Die exportierten Dokumente sind als .txt Dateien formatiert.
+                Die exportierten Dokumente sind als .txt und .docx Dateien verfügbar.
               </p>
             </div>
           )}
