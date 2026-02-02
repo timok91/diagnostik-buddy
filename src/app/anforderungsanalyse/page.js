@@ -13,6 +13,12 @@ import {
   Edit3
 } from 'lucide-react';
 
+const SUGGESTIONS = [
+  'Ich möchte ein Anforderungsprofil für eine Führungsposition erstellen',
+  'Ich habe eine Stellenbeschreibung, die ich als Ausgangspunkt nutzen möchte',
+  'Ich suche eine/n Vertriebsmitarbeiter/in im Außendienst',
+];
+
 function AnforderungsanalyseContent() {
   const { 
     sessionData, 
@@ -220,10 +226,8 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
     }
 
     if (sessionData.selectedAnalysisId) {
-      // Bestehende Analyse aktualisieren
       updateAnalysis(sessionData.selectedAnalysisId);
     } else {
-      // Neue Analyse speichern
       saveAnalysis(analysisName.trim());
     }
     
@@ -251,9 +255,9 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
   }
 
   return (
-    <div className="min-h-screen bg-iron-100 flex flex-col">
+    <div className="h-screen bg-iron-100 flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-white border-b border-gray-200 shadow-sm flex-shrink-0">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -295,8 +299,8 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-220px)]">
+      <div className="flex-1 min-h-0 max-w-6xl mx-auto w-full px-6 py-6 flex flex-col">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col flex-1 min-h-0 relative">
           {/* Summary Modal */}
           {showSummary && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
@@ -383,11 +387,12 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
               isLoading={isLoading}
               placeholder="Beschreiben Sie die Position oder stellen Sie Fragen..."
               systemPrompt={systemPrompt}
+              suggestions={SUGGESTIONS}
             />
           </div>
 
           {/* Footer with Actions */}
-          <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+          <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex-shrink-0">
             <div className="flex items-center justify-between">
               <button
                 onClick={() => router.push('/')}

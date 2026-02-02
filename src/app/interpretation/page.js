@@ -25,6 +25,12 @@ import {
   getB6SystemPromptSection
 } from '@/lib/b6-scale';
 
+const SUGGESTIONS = [
+  'Gib mir eine Übersicht über die Profile aller Kandidaten',
+  'Vergleiche die Kandidaten hinsichtlich der definierten Anforderungen',
+  'Wo liegen Stärken und Entwicklungsbereiche bei den Kandidaten?',
+];
+
 function AnalysisSelector({ onSelect, onCancel }) {
   const { savedAnalyses } = useSession();
 
@@ -177,10 +183,8 @@ function InterpretationContent() {
     });
   };
 
-  // Formatierte Kandidatenübersicht für das LLM
   const candidatesOverview = formatAllCandidatesForLLM(sessionData.candidates);
 
-  // Verbesserter System-Prompt mit eindeutiger Skalen-Definition
   const systemPrompt = `Du bist ein Experte für die Interpretation psychometrischer Testergebnisse und berufliche Eignungsdiagnostik.
 
 KONTEXT - ANFORDERUNGEN FÜR DIE POSITION:
@@ -281,7 +285,6 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
   };
 
   const handleNextModule = () => {
-    // Auto-save before proceeding
     if (!isSaved && sessionData.interpretation) {
       if (sessionData.selectedInterpretationId) {
         updateInterpretation(sessionData.selectedInterpretationId);
@@ -307,10 +310,10 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
   }
 
   return (
-    <div className="min-h-screen bg-iron-100 flex flex-col">
+    <div className="h-screen bg-iron-100 flex flex-col overflow-hidden">
       {showAnalysisSelector && <AnalysisSelector onSelect={handleSelectAnalysis} onCancel={() => router.push('/')} />}
 
-      <header className="bg-white border-b border-iron-200 shadow-sm">
+      <header className="bg-white border-b border-iron-200 shadow-sm flex-shrink-0">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -347,12 +350,12 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
         </div>
       </header>
 
-      <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-220px)]">
+      <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-6 py-6 flex flex-col">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
           
           {/* Candidates Panel */}
           <div className={`lg:col-span-1 bg-white rounded-xl shadow-sm border border-iron-200 flex flex-col overflow-hidden ${showCandidatePanel ? '' : 'hidden lg:flex'}`}>
-            <div className="px-4 py-3 border-b border-iron-200 bg-iron-50 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-iron-200 bg-iron-50 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary" />
                 <h2 className="font-semibold text-gray-900">Kandidaten</h2>
@@ -363,7 +366,7 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
               </button>
             </div>
 
-            <div className="p-3 border-b border-iron-200">
+            <div className="p-3 border-b border-iron-200 flex-shrink-0">
               <div className="flex gap-2">
                 <input type="text" value={newCandidateName} onChange={(e) => setNewCandidateName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddCandidate()} placeholder="Name eingeben..."
@@ -391,10 +394,10 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
           </div>
 
           {/* Chat Panel */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-iron-200 flex flex-col overflow-hidden">
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-iron-200 flex flex-col overflow-hidden relative">
             {!showCandidatePanel && (
               <button onClick={() => setShowCandidatePanel(true)}
-                className="lg:hidden px-4 py-2 border-b border-iron-200 bg-iron-50 flex items-center gap-2 text-sm text-gray-600">
+                className="lg:hidden px-4 py-2 border-b border-iron-200 bg-iron-50 flex items-center gap-2 text-sm text-gray-600 flex-shrink-0">
                 <Users className="w-4 h-4" />
                 Kandidaten anzeigen ({sessionData.candidates.length})
                 <ChevronDown className="w-4 h-4 ml-auto" />
@@ -461,10 +464,11 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
             <div className="flex-1 flex flex-col min-h-0">
               <ChatInterface messages={sessionData.interpretationChat} onSendMessage={handleSendMessage} isLoading={isLoading}
                 placeholder={sessionData.candidates.length === 0 ? "Bitte fügen Sie zuerst Kandidaten hinzu..." : "Stellen Sie Fragen zur Interpretation..."}
-                systemPrompt={systemPrompt} />
+                systemPrompt={systemPrompt}
+                suggestions={SUGGESTIONS} />
             </div>
 
-            <div className="border-t border-iron-200 px-6 py-4 bg-iron-50">
+            <div className="border-t border-iron-200 px-6 py-4 bg-iron-50 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <button onClick={() => router.push('/')} className="px-6 py-3 border border-iron-300 text-gray-700 rounded-lg hover:bg-gray-50">
                   Zur Startseite

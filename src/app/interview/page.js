@@ -19,6 +19,12 @@ import {
   getB6SystemPromptSection
 } from '@/lib/b6-scale';
 
+const SUGGESTIONS = [
+  'Erstelle einen strukturierten Interviewleitfaden für diese Position',
+  'Welche verhaltensbasierten Fragen eignen sich für die Anforderungen?',
+  'Generiere hypothesenbasierte Fragen aus den B6-Profilen der Kandidaten',
+];
+
 // Context Info Bar Component
 function ContextInfoBar({ analysis, interpretation, candidates }) {
   const hasAnalysis = !!analysis;
@@ -26,7 +32,7 @@ function ContextInfoBar({ analysis, interpretation, candidates }) {
   const hasCandidates = candidates && candidates.length > 0;
 
   return (
-    <div className="bg-iron-50 border-b border-iron-200 px-6 py-3">
+    <div className="bg-iron-50 border-b border-iron-200 px-6 py-3 flex-shrink-0">
       <div className="flex items-center gap-6 text-sm">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${hasAnalysis ? 'bg-green-500' : 'bg-gray-300'}`} />
@@ -201,7 +207,6 @@ function InterviewContent() {
   const handleSelectAnalysis = (analysis) => {
     loadAnalysis(analysis.id);
     setShowAnalysisSelector(false);
-    // After selecting analysis, offer to select interpretation
     const relevantInterpretations = savedInterpretations.filter(
       i => i.analysisId === analysis.id
     );
@@ -219,12 +224,10 @@ function InterviewContent() {
     setShowInterpretationSelector(false);
   };
 
-  // Formatierte Kandidatenübersicht für das LLM
   const candidatesOverview = formatAllCandidatesForLLM(sessionData.candidates);
   const hasCandidates = sessionData.candidates && sessionData.candidates.length > 0;
   const hasInterpretation = sessionData.interpretation && sessionData.interpretation.length > 0;
 
-  // Verbesserter System-Prompt mit eindeutiger Skalen-Definition
   const systemPrompt = `Du bist ein Experte für strukturierte Interviews und verhaltensbasierte Interviewtechnik.
 
 KONTEXT - ANFORDERUNGEN FÜR DIE POSITION:
@@ -340,7 +343,6 @@ Sei prägnant und praxisorientiert.`;
   };
 
   const handleExport = () => {
-    // Auto-save before export
     if (!isSaved && sessionData.interviewGuide) {
       if (sessionData.selectedInterviewId) {
         updateInterview(sessionData.selectedInterviewId);
@@ -360,7 +362,7 @@ Sei prägnant und praxisorientiert.`;
   }
 
   return (
-    <div className="min-h-screen bg-iron-100 flex flex-col">
+    <div className="h-screen bg-iron-100 flex flex-col overflow-hidden">
       {showAnalysisSelector && <AnalysisSelector onSelect={handleSelectAnalysis} onCancel={() => router.push('/')} />}
       {showInterpretationSelector && (
         <InterpretationSelector 
@@ -371,7 +373,7 @@ Sei prägnant und praxisorientiert.`;
         />
       )}
 
-      <header className="bg-white border-b border-iron-200 shadow-sm">
+      <header className="bg-white border-b border-iron-200 shadow-sm flex-shrink-0">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -415,12 +417,12 @@ Sei prägnant und praxisorientiert.`;
         candidates={sessionData.candidates}
       />
 
-      <div className="flex-1 max-w-5xl mx-auto w-full px-6 py-6">
-        <div className="bg-white rounded-xl shadow-sm border border-iron-200 flex flex-col h-[calc(100vh-280px)]">
+      <div className="flex-1 min-h-0 max-w-5xl mx-auto w-full px-6 py-6 flex flex-col">
+        <div className="bg-white rounded-xl shadow-sm border border-iron-200 flex flex-col flex-1 min-h-0 relative">
           
           {/* Context Details Toggle */}
           {(hasInterpretation || hasCandidates) && (
-            <div className="border-b border-iron-200">
+            <div className="border-b border-iron-200 flex-shrink-0">
               <button 
                 onClick={() => setShowContextDetails(!showContextDetails)}
                 className="w-full px-4 py-2 flex items-center justify-between text-sm text-gray-600 hover:bg-iron-50"
@@ -516,10 +518,11 @@ Sei prägnant und praxisorientiert.`;
           <div className="flex-1 flex flex-col min-h-0">
             <ChatInterface messages={sessionData.interviewChat} onSendMessage={handleSendMessage} isLoading={isLoading}
               placeholder="Stellen Sie Fragen zur Interviewvorbereitung..."
-              systemPrompt={systemPrompt} />
+              systemPrompt={systemPrompt}
+              suggestions={SUGGESTIONS} />
           </div>
 
-          <div className="border-t border-iron-200 px-6 py-4 bg-iron-50">
+          <div className="border-t border-iron-200 px-6 py-4 bg-iron-50 flex-shrink-0">
             <div className="flex items-center justify-between">
               <button onClick={() => router.push('/')} className="px-6 py-3 border border-iron-300 text-gray-700 rounded-lg hover:bg-gray-50">
                 Zur Startseite

@@ -1,13 +1,14 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Loader2 } from 'lucide-react';
+import { Send, User, Loader2, MessageSquare } from 'lucide-react';
 
 export default function ChatInterface({ 
   messages, 
   onSendMessage, 
   isLoading, 
   placeholder = "Ihre Nachricht eingeben...",
-  systemPrompt 
+  systemPrompt,
+  suggestions = []
 }) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
@@ -26,6 +27,11 @@ export default function ChatInterface({
     setInput('');
   };
 
+  const handleSuggestionClick = (suggestion) => {
+    if (isLoading) return;
+    onSendMessage(suggestion);
+  };
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -39,14 +45,31 @@ export default function ChatInterface({
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center max-w-md">
+            <div className="text-center max-w-lg w-full">
               <img src="/logo.png" alt="Logo" className="w-16 h-18 mx-auto mb-4 opacity-40" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Starten Sie die Konversation
               </h3>
-              <p className="text-gray-600 text-sm">
-                Stellen Sie Ihre erste Frage oder beschreiben Sie Ihr Anliegen.
+              <p className="text-gray-600 text-sm mb-6">
+                Stellen Sie Ihre erste Frage oder wählen Sie einen Vorschlag.
               </p>
+
+              {/* Suggestion Buttons */}
+              {suggestions.length > 0 && (
+                <div className="space-y-2">
+                  {suggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      disabled={isLoading}
+                      className="w-full text-left px-4 py-3 bg-white border-2 border-iron-200 rounded-xl text-sm text-gray-700 hover:border-primary hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-start gap-3 group"
+                    >
+                      <MessageSquare className="w-4 h-4 text-gray-400 group-hover:text-primary mt-0.5 flex-shrink-0" />
+                      <span>{suggestion}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : (
