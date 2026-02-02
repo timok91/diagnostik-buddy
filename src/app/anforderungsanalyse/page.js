@@ -3,15 +3,16 @@ import { useSession, SessionProvider } from '@/context/SessionContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import ChatInterface from '@/components/ChatInterface';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  Home, 
-  Save, 
+import {
+  CheckCircle,
+  AlertCircle,
+  Home,
+  Save,
   ArrowRight,
   FileText,
   Edit3
 } from 'lucide-react';
+import { useToast } from '@/components/Toast';
 
 const SUGGESTIONS = [
   'Ich möchte ein Anforderungsprofil für eine Führungsposition erstellen',
@@ -20,15 +21,16 @@ const SUGGESTIONS = [
 ];
 
 function AnforderungsanalyseContent() {
-  const { 
-    sessionData, 
-    updateSession, 
-    saveAnalysis, 
+  const {
+    sessionData,
+    updateSession,
+    saveAnalysis,
     updateAnalysis,
     nextModule,
-    isHydrated 
+    isHydrated
   } = useSession();
   const router = useRouter();
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -116,7 +118,7 @@ STIL:
 
   const handleSendMessage = async (message) => {
     if (!sessionData.apiKey) {
-      alert('Bitte API-Key in den Einstellungen hinterlegen (Zahnrad-Symbol auf der Startseite)');
+      toast.error('Bitte API-Key in den Einstellungen hinterlegen (Zahnrad-Symbol auf der Startseite)');
       return;
     }
 
@@ -161,7 +163,7 @@ STIL:
 
   const handleFinishAnalysis = async () => {
     if (sessionData.requirementsChat.length < 2) {
-      alert('Bitte führen Sie zunächst eine Anforderungsanalyse durch');
+      toast.warning('Bitte führen Sie zunächst eine Anforderungsanalyse durch');
       return;
     }
 
@@ -213,7 +215,7 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
       updateSession({ requirements: summaryText });
       setShowSummary(true);
     } catch (error) {
-      alert(`Fehler beim Erstellen der Zusammenfassung: ${error.message}`);
+      toast.error(`Fehler beim Erstellen der Zusammenfassung: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -221,7 +223,7 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
 
   const handleSave = () => {
     if (!analysisName.trim()) {
-      alert('Bitte geben Sie einen Namen für die Analyse ein');
+      toast.warning('Bitte geben Sie einen Namen für die Analyse ein');
       return;
     }
 

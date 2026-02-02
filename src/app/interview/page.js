@@ -18,6 +18,7 @@ import {
   formatAllCandidatesForLLM,
   getB6SystemPromptSection
 } from '@/lib/b6-scale';
+import { useToast } from '@/components/Toast';
 
 const SUGGESTIONS = [
   'Erstelle einen strukturierten Interviewleitfaden für diese Position',
@@ -177,11 +178,12 @@ function AnalysisSelector({ onSelect, onCancel }) {
 }
 
 function InterviewContent() {
-  const { 
+  const {
     sessionData, updateSession, loadAnalysis, loadInterpretation,
-    saveInterview, updateInterview, savedAnalyses, savedInterpretations, isHydrated 
+    saveInterview, updateInterview, savedAnalyses, savedInterpretations, isHydrated
   } = useSession();
   const router = useRouter();
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showAnalysisSelector, setShowAnalysisSelector] = useState(false);
   const [showInterpretationSelector, setShowInterpretationSelector] = useState(false);
@@ -265,7 +267,7 @@ BEISPIEL FÜR HYPOTHESENBASIERTE FRAGE:
 STIL: Professionell, strukturiert, klar, deutschsprachig`;
 
   const handleSendMessage = async (message) => {
-    if (!sessionData.apiKey) { alert('Bitte API-Key in den Einstellungen hinterlegen'); return; }
+    if (!sessionData.apiKey) { toast.error('Bitte API-Key in den Einstellungen hinterlegen'); return; }
 
     const userMessage = { role: 'user', content: message };
     const updatedChat = [...sessionData.interviewChat, userMessage];
@@ -290,7 +292,7 @@ STIL: Professionell, strukturiert, klar, deutschsprachig`;
   };
 
   const handleFinishInterview = async () => {
-    if (sessionData.interviewChat.length < 2) { alert('Bitte führen Sie zunächst ein Gespräch'); return; }
+    if (sessionData.interviewChat.length < 2) { toast.warning('Bitte führen Sie zunächst ein Gespräch'); return; }
     setIsLoading(true);
 
     const summaryPrompt = `Erstelle einen strukturierten Interviewleitfaden basierend auf unserem Gespräch:
@@ -324,14 +326,14 @@ Sei prägnant und praxisorientiert.`;
       updateSession({ interviewGuide: summaryText });
       setShowSummary(true);
     } catch (error) {
-      alert(`Fehler: ${error.message}`);
+      toast.error(`Fehler: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSave = () => {
-    if (!interviewName.trim()) { alert('Bitte geben Sie einen Namen ein'); return; }
+    if (!interviewName.trim()) { toast.warning('Bitte geben Sie einen Namen ein'); return; }
     
     if (sessionData.selectedInterviewId) {
       updateInterview(sessionData.selectedInterviewId);

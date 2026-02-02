@@ -24,6 +24,7 @@ import {
   formatAllCandidatesForLLM,
   getB6SystemPromptSection
 } from '@/lib/b6-scale';
+import { useToast } from '@/components/Toast';
 
 const SUGGESTIONS = [
   'Gib mir eine Übersicht über die Profile aller Kandidaten',
@@ -134,11 +135,12 @@ function CandidateCard({ candidate, onUpdate, onRemove, isExpanded, onToggle }) 
 }
 
 function InterpretationContent() {
-  const { 
+  const {
     sessionData, updateSession, loadAnalysis, addCandidate, updateCandidate, removeCandidate,
-    saveInterpretation, updateInterpretation, nextModule, savedAnalyses, isHydrated 
+    saveInterpretation, updateInterpretation, nextModule, savedAnalyses, isHydrated
   } = useSession();
   const router = useRouter();
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showAnalysisSelector, setShowAnalysisSelector] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -211,8 +213,8 @@ BEISPIEL FÜR KORREKTE INTERPRETATION:
 STIL: Professionell, keine Emojis, kurz und prägnant (3-5 Sätze pro Antwort), Deutschsprachig`;
 
   const handleSendMessage = async (message) => {
-    if (!sessionData.apiKey) { alert('Bitte API-Key in den Einstellungen hinterlegen'); return; }
-    if (sessionData.candidates.length === 0) { alert('Bitte fügen Sie mindestens einen Kandidaten hinzu'); return; }
+    if (!sessionData.apiKey) { toast.error('Bitte API-Key in den Einstellungen hinterlegen'); return; }
+    if (sessionData.candidates.length === 0) { toast.warning('Bitte fügen Sie mindestens einen Kandidaten hinzu'); return; }
 
     const userMessage = { role: 'user', content: message };
     const updatedChat = [...sessionData.interpretationChat, userMessage];
@@ -237,7 +239,7 @@ STIL: Professionell, keine Emojis, kurz und prägnant (3-5 Sätze pro Antwort), 
   };
 
   const handleFinishInterpretation = async () => {
-    if (sessionData.interpretationChat.length < 2) { alert('Bitte führen Sie zunächst eine Interpretation durch'); return; }
+    if (sessionData.interpretationChat.length < 2) { toast.warning('Bitte führen Sie zunächst eine Interpretation durch'); return; }
     setIsLoading(true);
 
     const summaryPrompt = `Fasse die wichtigsten Interpretationsergebnisse strukturiert zusammen:
@@ -266,14 +268,14 @@ Sei prägnant, nutze Stichpunkte, keine Einleitung.`;
       updateSession({ interpretation: summaryText });
       setShowSummary(true);
     } catch (error) {
-      alert(`Fehler: ${error.message}`);
+      toast.error(`Fehler: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSave = () => {
-    if (!interpretationName.trim()) { alert('Bitte geben Sie einen Namen ein'); return; }
+    if (!interpretationName.trim()) { toast.warning('Bitte geben Sie einen Namen ein'); return; }
     
     if (sessionData.selectedInterpretationId) {
       updateInterpretation(sessionData.selectedInterpretationId);
