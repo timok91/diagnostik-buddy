@@ -27,6 +27,33 @@ const SUGGESTIONS = [
   'Generiere hypothesenbasierte Fragen aus den B6-Profilen der Kandidaten',
 ];
 
+/**
+ * Liest eine Streaming-Response vom Vercel AI SDK und gibt den Text zurück.
+ * Das AI SDK sendet plain text (kein SSE-Format), daher sehr einfach.
+ * @param {Response} response - Die fetch Response
+ * @param {Function} onPartialText - Callback für Partial-Updates (optional)
+ * @returns {Promise<string>} Der vollständige Text
+ */
+async function readStreamResponse(response, onPartialText) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    fullText += decoder.decode(value, { stream: true });
+    if (onPartialText) onPartialText(fullText);
+  }
+
+  if (!fullText) {
+    throw new Error('Keine Antwort vom API erhalten');
+  }
+
+  return fullText;
+}
+
 // Context Info Bar Component
 function ContextInfoBar({ analysis, interpretation, candidates }) {
   const hasAnalysis = !!analysis;
@@ -242,7 +269,7 @@ ${candidatesOverview}` : 'Noch keine Kandidaten eingegeben.'}
 ${hasInterpretation ? `BISHERIGE INTERPRETATION DER TESTERGEBNISSE:
 ${sessionData.interpretation}` : ''}
 
-${getB6SystemPromptSection()}
+${hasCandidates ? getB6SystemPromptSection() : ''}
 
 INTERVIEWMETHODIK:
 1. VERHALTENSBASIERTE FRAGEN: Mind. 70% der Fragen sollten nach konkretem Verhalten fragen
@@ -282,9 +309,17 @@ STIL: Professionell, strukturiert, klar, deutschsprachig`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: updatedChat, systemPrompt, apiKey: sessionData.apiKey })
       });
-      if (!response.ok) throw new Error(`API Error: ${response.status}`);
-      const data = await response.json();
-      updateSession({ interviewChat: [...updatedChat, { role: 'assistant', content: data.content[0].text }] });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
+
+      // Streaming Response verarbeiten
+      const text = await readStreamResponse(response, (partialText) => {
+        updateSession({ interviewChat: [...updatedChat, { role: 'assistant', content: partialText }] });
+      });
+      updateSession({ interviewChat: [...updatedChat, { role: 'assistant', content: text }] });
     } catch (error) {
       updateSession({ interviewChat: [...updatedChat, { role: 'assistant', content: `Fehler: ${error.message}` }] });
     } finally {
@@ -320,9 +355,17 @@ Sei prägnant und praxisorientiert.`;
           systemPrompt, apiKey: sessionData.apiKey
         })
       });
-      if (!response.ok) throw new Error(`API Error: ${response.status}`);
-      const data = await response.json();
-      const summaryText = data.content[0].text;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
+
+      // Streaming Response verarbeiten
+      const summaryText = await readStreamResponse(response, (partialText) => {
+        setSummary(partialText);
+      });
+
       setSummary(summaryText);
       updateSession({ interviewGuide: summaryText });
       setShowSummary(true);

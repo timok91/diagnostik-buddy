@@ -452,6 +452,22 @@ export function SessionProvider({ children }) {
     return newInterview;
   };
 
+  const updateInterview = (id) => {
+    setSavedInterviews(prev => prev.map(interview => {
+      if (interview.id === id) {
+        return {
+          ...interview,
+          guide: sessionData.interviewGuide,
+          chat: sessionData.interviewChat,
+          candidates: sessionData.candidates,
+          interpretation: sessionData.interpretation,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return interview;
+    }));
+  };
+
   const updateInterviewDirect = (id, updates) => {
     setSavedInterviews(prev => prev.map(interview => {
       if (interview.id === id) {
@@ -592,6 +608,7 @@ export function SessionProvider({ children }) {
       getInterpretationsForAnalysis,
       // Interviews
       saveInterview,
+      updateInterview,
       updateInterviewDirect,
       deleteInterview,
       loadInterview,

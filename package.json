@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.72.1",
     "docx": "^9.5.1",
     "fuse.js": "^7.1.0",
     "gray-matter": "^4.0.3",

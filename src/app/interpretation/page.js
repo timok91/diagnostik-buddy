@@ -33,6 +33,29 @@ const SUGGESTIONS = [
   'Wo liegen Stärken und Entwicklungsbereiche bei den Kandidaten?',
 ];
 
+/**
+ * Liest eine Streaming-Response vom Vercel AI SDK.
+ */
+async function readStreamResponse(response, onPartialText) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    fullText += decoder.decode(value, { stream: true });
+    if (onPartialText) onPartialText(fullText);
+  }
+
+  if (!fullText) {
+    throw new Error('Keine Antwort vom API erhalten');
+  }
+
+  return fullText;
+}
+
 function AnalysisSelector({ onSelect, onCancel }) {
   const { savedAnalyses } = useSession();
 
@@ -259,9 +282,17 @@ STIL:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: updatedChat, systemPrompt, apiKey: sessionData.apiKey })
       });
-      if (!response.ok) throw new Error(`API Error: ${response.status}`);
-      const data = await response.json();
-      updateSession({ interpretationChat: [...updatedChat, { role: 'assistant', content: data.content[0].text }] });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
+
+      // Streaming Response verarbeiten
+      const text = await readStreamResponse(response, (partialText) => {
+        updateSession({ interpretationChat: [...updatedChat, { role: 'assistant', content: partialText }] });
+      });
+      updateSession({ interpretationChat: [...updatedChat, { role: 'assistant', content: text }] });
     } catch (error) {
       updateSession({ interpretationChat: [...updatedChat, { role: 'assistant', content: `Fehler: ${error.message}` }] });
     } finally {
@@ -307,9 +338,17 @@ Sei prägnant, nutze Stichpunkte.`;
           systemPrompt, apiKey: sessionData.apiKey
         })
       });
-      if (!response.ok) throw new Error(`API Error: ${response.status}`);
-      const data = await response.json();
-      const summaryText = data.content[0].text;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
+
+      // Streaming Response verarbeiten
+      const summaryText = await readStreamResponse(response, (partialText) => {
+        setSummary(partialText);
+      });
+
       setSummary(summaryText);
       updateSession({ interpretation: summaryText });
       setShowSummary(true);

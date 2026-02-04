@@ -21,6 +21,29 @@ const SUGGESTIONS = [
   'Ich suche eine/n Vertriebsmitarbeiter/in im Außendienst',
 ];
 
+/**
+ * Liest eine Streaming-Response vom Vercel AI SDK.
+ */
+async function readStreamResponse(response, onPartialText) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    fullText += decoder.decode(value, { stream: true });
+    if (onPartialText) onPartialText(fullText);
+  }
+
+  if (!fullText) {
+    throw new Error('Keine Antwort vom API erhalten');
+  }
+
+  return fullText;
+}
+
 function AnforderungsanalyseContent() {
   const {
     sessionData,
@@ -141,22 +164,19 @@ STIL:
         })
       });
 
-      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
 
-      const data = await response.json();
-      const assistantMessage = {
-        role: 'assistant',
-        content: data.content[0].text
-      };
-
-      updateSession({ requirementsChat: [...updatedChat, assistantMessage] });
+      // Streaming Response verarbeiten
+      const text = await readStreamResponse(response, (partialText) => {
+        updateSession({ requirementsChat: [...updatedChat, { role: 'assistant', content: partialText }] });
+      });
+      updateSession({ requirementsChat: [...updatedChat, { role: 'assistant', content: text }] });
     } catch (error) {
       console.error('Error:', error);
-      const errorMessage = {
-        role: 'assistant',
-        content: `Fehler bei der API-Kommunikation: ${error.message}`
-      };
-      updateSession({ requirementsChat: [...updatedChat, errorMessage] });
+      updateSession({ requirementsChat: [...updatedChat, { role: 'assistant', content: `Fehler: ${error.message}` }] });
     } finally {
       setIsLoading(false);
     }
@@ -207,16 +227,21 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
         })
       });
 
-      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
 
-      const data = await response.json();
-      const summaryText = data.content[0].text;
-      
+      // Streaming Response verarbeiten
+      const summaryText = await readStreamResponse(response, (partialText) => {
+        setSummary(partialText);
+      });
+
       setSummary(summaryText);
       updateSession({ requirements: summaryText });
       setShowSummary(true);
     } catch (error) {
-      toast.error(`Fehler beim Erstellen der Zusammenfassung: ${error.message}`);
+      toast.error(`Fehler: ${error.message}`);
     } finally {
       setIsLoading(false);
     }

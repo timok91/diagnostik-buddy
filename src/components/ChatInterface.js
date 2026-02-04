@@ -47,7 +47,7 @@ export default function ChatInterface({
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center max-w-lg w-full">
-              <img src="/logo.png" alt="Logo" className="w-16 h-18 mx-auto mb-4 opacity-40" />
+              <img src="/chat-icon.png" alt="Logo" className="w-16 h-16 mx-auto mb-4 opacity-40" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Starten Sie die Konversation
               </h3>
@@ -83,8 +83,8 @@ export default function ChatInterface({
                 }`}
               >
                 {msg.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
-                    <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                  <div className="w-8 h-8 flex-shrink-0">
+                    <img src="/chat-icon.png" alt="Logo" className="w-full h-full object-contain" />
                   </div>
                 )}
                 <div
@@ -110,8 +110,8 @@ export default function ChatInterface({
 
             {isLoading && (
               <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                  <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                <div className="w-8 h-8">
+                  <img src="/chat-icon.png" alt="Logo" className="w-full h-full object-contain" />
                 </div>
                 <div className="bg-gray-100 rounded-2xl px-4 py-3">
                   <div className="flex gap-1 items-center">
