@@ -233,7 +233,7 @@ const createDocumentHeader = (logoData) => {
                       new ImageRun({
                         type: 'png',
                         data: logoData,
-                        transformation: { width: 50, height: 50 },
+                        transformation: { width: 45, height: 60 },
                         altText: {
                           title: 'Balanced Six Logo',
                           description: 'B6 Kompakt Logo',
