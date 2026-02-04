@@ -4,6 +4,11 @@ import matter from 'gray-matter';
 
 const CONTENT_DIR = path.join(process.cwd(), 'src/content/training');
 
+// Path Traversal Schutz - nur alphanumerische Zeichen, Bindestriche und Unterstriche
+const isValidSlug = (slug) => {
+  return typeof slug === 'string' && /^[a-z0-9_-]+$/i.test(slug);
+};
+
 /**
  * Alle Artikel-Metadaten laden (für Übersichtsseite)
  */
@@ -51,8 +56,13 @@ export function getAllArticles() {
  * Einzelnen Artikel laden (für Detailseite)
  */
 export function getArticleBySlug(slug) {
+  // Path Traversal Schutz
+  if (!isValidSlug(slug)) {
+    return null;
+  }
+
   const filePath = path.join(CONTENT_DIR, `${slug}.mdx`);
-  
+
   if (!fs.existsSync(filePath)) {
     return null;
   }

@@ -34,6 +34,15 @@ export async function POST(request) {
       })
     });
 
+    // API-Fehler prüfen
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: errorData.error?.message || `API Error: ${response.status}` },
+        { status: response.status }
+      );
+    }
+
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
@@ -64,7 +73,7 @@ function withCacheBreakpoint(messages) {
         content: [
           {
             type: 'text',
-            text: result[i].content,
+            text: typeof result[i].content === 'string' ? result[i].content : result[i].content[0]?.text || '',
             cache_control: { type: 'ephemeral' }
           }
         ]

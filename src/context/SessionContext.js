@@ -11,6 +11,33 @@ const STORAGE_KEYS = {
   session: 'b6-current-session'
 };
 
+// ID-Generator mit UUID-Unterstützung (verhindert Kollisionen bei schnellen Aufrufen)
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback für ältere Browser
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+};
+
+// Validierungsfunktionen für localStorage-Daten
+const isValidAnalysis = (item) => {
+  return item && typeof item === 'object' && typeof item.id === 'string' && typeof item.name === 'string';
+};
+
+const isValidInterpretation = (item) => {
+  return item && typeof item === 'object' && typeof item.id === 'string';
+};
+
+const isValidInterview = (item) => {
+  return item && typeof item === 'object' && typeof item.id === 'string';
+};
+
+const validateArray = (data, validator) => {
+  if (!Array.isArray(data)) return [];
+  return data.filter(validator);
+};
+
 // Leere Session-Vorlage
 const emptySession = {
   // Aktuelle Session
@@ -48,31 +75,34 @@ export function SessionProvider({ children }) {
   // Laden aller gespeicherten Daten aus localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Analysen laden
+      // Analysen laden (mit Validierung)
       const storedAnalyses = localStorage.getItem(STORAGE_KEYS.analyses);
       if (storedAnalyses) {
         try {
-          setSavedAnalyses(JSON.parse(storedAnalyses));
+          const parsed = JSON.parse(storedAnalyses);
+          setSavedAnalyses(validateArray(parsed, isValidAnalysis));
         } catch (e) {
           console.error('Fehler beim Laden der Analysen:', e);
         }
       }
-      
-      // Interpretationen laden
+
+      // Interpretationen laden (mit Validierung)
       const storedInterpretations = localStorage.getItem(STORAGE_KEYS.interpretations);
       if (storedInterpretations) {
         try {
-          setSavedInterpretations(JSON.parse(storedInterpretations));
+          const parsed = JSON.parse(storedInterpretations);
+          setSavedInterpretations(validateArray(parsed, isValidInterpretation));
         } catch (e) {
           console.error('Fehler beim Laden der Interpretationen:', e);
         }
       }
-      
-      // Interviews laden
+
+      // Interviews laden (mit Validierung)
       const storedInterviews = localStorage.getItem(STORAGE_KEYS.interviews);
       if (storedInterviews) {
         try {
-          setSavedInterviews(JSON.parse(storedInterviews));
+          const parsed = JSON.parse(storedInterviews);
+          setSavedInterviews(validateArray(parsed, isValidInterview));
         } catch (e) {
           console.error('Fehler beim Laden der Interviews:', e);
         }
@@ -158,77 +188,76 @@ export function SessionProvider({ children }) {
     }
   };
 
-  // Modul starten (ohne kompletten Reset)
+  // Modul starten (ohne kompletten Reset) - alle Updates in einem einzigen setState-Aufruf
   const startModule = (moduleName, options = {}) => {
     const { isStandardProcess = false, analysisId = null, interpretationId = null, interviewId = null, keepData = false } = options;
-    
-    if (!keepData) {
-      setSessionData(prev => ({
-        ...emptySession,
-        apiKey: prev.apiKey,
-        currentModule: moduleName,
-        isStandardProcess,
-        selectedAnalysisId: analysisId,
-        selectedInterpretationId: interpretationId,
-        selectedInterviewId: interviewId,
-      }));
-    } else {
-      setSessionData(prev => ({
-        ...prev,
-        currentModule: moduleName,
-        isStandardProcess,
-      }));
-    }
 
-    // Analyse laden
-    if (analysisId) {
-      const analysis = savedAnalyses.find(a => a.id === analysisId);
-      if (analysis) {
-        setSessionData(prev => ({
-          ...prev,
-          selectedAnalysisId: analysis.id,
-          analysisName: analysis.name,
-          requirements: analysis.requirements,
-          requirementsChat: analysis.chat || [],
-        }));
-      }
-    }
+    setSessionData(prev => {
+      // Basis-Session erstellen
+      let newSession = keepData
+        ? { ...prev, currentModule: moduleName, isStandardProcess }
+        : {
+            ...emptySession,
+            apiKey: prev.apiKey,
+            currentModule: moduleName,
+            isStandardProcess,
+            selectedAnalysisId: analysisId,
+            selectedInterpretationId: interpretationId,
+            selectedInterviewId: interviewId,
+          };
 
-    // Interpretation laden
-    if (interpretationId) {
-      const interpretation = savedInterpretations.find(i => i.id === interpretationId);
-      if (interpretation) {
-        setSessionData(prev => ({
-          ...prev,
-          selectedInterpretationId: interpretation.id,
-          selectedAnalysisId: interpretation.analysisId,
-          analysisName: interpretation.analysisName,
-          requirements: interpretation.requirements || prev.requirements,
-          candidates: interpretation.candidates || [],
-          interpretation: interpretation.interpretation,
-          interpretationChat: interpretation.chat || [],
-        }));
+      // Analyse laden (falls vorhanden)
+      if (analysisId) {
+        const analysis = savedAnalyses.find(a => a.id === analysisId);
+        if (analysis) {
+          newSession = {
+            ...newSession,
+            selectedAnalysisId: analysis.id,
+            analysisName: analysis.name,
+            requirements: analysis.requirements,
+            requirementsChat: analysis.chat || [],
+          };
+        }
       }
-    }
 
-    // Interview laden
-    if (interviewId) {
-      const interview = savedInterviews.find(i => i.id === interviewId);
-      if (interview) {
-        setSessionData(prev => ({
-          ...prev,
-          selectedInterviewId: interview.id,
-          selectedAnalysisId: interview.analysisId,
-          analysisName: interview.analysisName,
-          requirements: interview.requirements || prev.requirements,
-          selectedInterpretationId: interview.interpretationId,
-          candidates: interview.candidates || prev.candidates,
-          interpretation: interview.interpretation || prev.interpretation,
-          interviewGuide: interview.guide,
-          interviewChat: interview.chat || [],
-        }));
+      // Interpretation laden (falls vorhanden)
+      if (interpretationId) {
+        const interpretation = savedInterpretations.find(i => i.id === interpretationId);
+        if (interpretation) {
+          newSession = {
+            ...newSession,
+            selectedInterpretationId: interpretation.id,
+            selectedAnalysisId: interpretation.analysisId,
+            analysisName: interpretation.analysisName,
+            requirements: interpretation.requirements || newSession.requirements,
+            candidates: interpretation.candidates || [],
+            interpretation: interpretation.interpretation,
+            interpretationChat: interpretation.chat || [],
+          };
+        }
       }
-    }
+
+      // Interview laden (falls vorhanden)
+      if (interviewId) {
+        const interview = savedInterviews.find(i => i.id === interviewId);
+        if (interview) {
+          newSession = {
+            ...newSession,
+            selectedInterviewId: interview.id,
+            selectedAnalysisId: interview.analysisId,
+            analysisName: interview.analysisName,
+            requirements: interview.requirements || newSession.requirements,
+            selectedInterpretationId: interview.interpretationId,
+            candidates: interview.candidates || newSession.candidates,
+            interpretation: interview.interpretation || newSession.interpretation,
+            interviewGuide: interview.guide,
+            interviewChat: interview.chat || [],
+          };
+        }
+      }
+
+      return newSession;
+    });
   };
 
   // =====================
@@ -237,7 +266,7 @@ export function SessionProvider({ children }) {
   
   const saveAnalysis = (name) => {
     const newAnalysis = {
-      id: Date.now().toString(),
+      id: generateId(),
       name: name || `Analyse vom ${new Date().toLocaleDateString('de-DE')}`,
       requirements: sessionData.requirements,
       chat: sessionData.requirementsChat,
@@ -318,7 +347,7 @@ export function SessionProvider({ children }) {
 
   const saveInterpretation = (name) => {
     const newInterpretation = {
-      id: Date.now().toString(),
+      id: generateId(),
       name: name || `Interpretation: ${sessionData.analysisName}`,
       analysisId: sessionData.selectedAnalysisId,
       analysisName: sessionData.analysisName,
@@ -403,7 +432,7 @@ export function SessionProvider({ children }) {
 
   const saveInterview = (name, guide) => {
     const newInterview = {
-      id: Date.now().toString(),
+      id: generateId(),
       name: name || `Interview: ${sessionData.analysisName}`,
       analysisId: sessionData.selectedAnalysisId,
       analysisName: sessionData.analysisName,
@@ -472,7 +501,7 @@ export function SessionProvider({ children }) {
     setSessionData(prev => ({
       ...prev,
       candidates: [...prev.candidates, {
-        id: Date.now(),
+        id: generateId(),
         name: candidate.name,
         dimensions: {
           ICH: 4,
