@@ -3,6 +3,7 @@ import { useSession, SessionProvider } from '@/context/SessionContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import ChatInterface from '@/components/ChatInterface';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { 
   CheckCircle, 
   AlertCircle, 
@@ -469,7 +470,7 @@ Sei prägnant und praxisorientiert.`;
                   <h3 className="text-2xl font-bold text-primary">Interviewleitfaden erstellt</h3>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                  <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{summary}</p>
+                  <MarkdownRenderer content={summary} />
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => setShowSummary(false)} className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">

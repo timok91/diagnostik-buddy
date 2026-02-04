@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Loader2, MessageSquare } from 'lucide-react';
+import MarkdownRenderer from './MarkdownRenderer';
 
 export default function ChatInterface({ 
   messages, 
@@ -93,7 +94,11 @@ export default function ChatInterface({
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                  {msg.role === 'assistant' ? (
+                    <MarkdownRenderer content={msg.content} />
+                  ) : (
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                  )}
                 </div>
                 {msg.role === 'user' && (
                   <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
