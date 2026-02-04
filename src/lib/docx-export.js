@@ -509,24 +509,6 @@ export const generateInterviewDocx = async (data) => {
   sections.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_1,
-      children: [new TextRun({ text: 'Anforderungen', bold: true })],
-    }),
-    ...parseContentToParagraphs(requirements || 'Keine Anforderungen definiert.'),
-  );
-  
-  if (hasInterpretation) {
-    sections.push(
-      new Paragraph({
-        heading: HeadingLevel.HEADING_1,
-        children: [new TextRun({ text: 'Interpretationsergebnisse', bold: true })],
-      }),
-      ...parseContentToParagraphs(interpretation),
-    );
-  }
-  
-  sections.push(
-    new Paragraph({
-      heading: HeadingLevel.HEADING_1,
       children: [new TextRun({ text: 'Interviewleitfaden', bold: true })],
     }),
     ...parseContentToParagraphs(guide || 'Kein Leitfaden vorhanden.'),
