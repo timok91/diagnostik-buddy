@@ -42,9 +42,14 @@ const parseContentToParagraphs = (content) => {
   
   lines.forEach((line) => {
     const trimmed = line.trim();
-    
+
     // Heading detection
-    if (trimmed.startsWith('### ')) {
+    if (trimmed.startsWith('#### ')) {
+      paragraphs.push(new Paragraph({
+        children: [new TextRun({ text: trimmed.replace('#### ', ''), bold: true, size: 22, color: '26358B' })],
+        spacing: { before: 200, after: 100 },
+      }));
+    } else if (trimmed.startsWith('### ')) {
       paragraphs.push(new Paragraph({
         heading: HeadingLevel.HEADING_3,
         children: [new TextRun({ text: trimmed.replace('### ', ''), bold: true })],
@@ -75,6 +80,13 @@ const parseContentToParagraphs = (content) => {
         numbering: { reference: 'numbers', level: 0 },
         children: [new TextRun(trimmed.replace(/^\d+\.\s*/, ''))],
         spacing: { before: 60, after: 60 },
+      }));
+    } else if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
+      // Horizontal rule
+      paragraphs.push(new Paragraph({
+        children: [],
+        border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: 'A2D8EF' } },
+        spacing: { before: 240, after: 240 },
       }));
     } else if (trimmed === '') {
       // Empty line
@@ -135,6 +147,15 @@ const createDocumentConfig = () => ({
         quickFormat: true,
         run: { size: 24, bold: true, font: 'Arial', color: '26358B' },
         paragraph: { spacing: { before: 240, after: 120 }, outlineLevel: 2 },
+      },
+      {
+        id: 'Heading4',
+        name: 'Heading 4',
+        basedOn: 'Normal',
+        next: 'Normal',
+        quickFormat: true,
+        run: { size: 22, bold: true, font: 'Arial', color: '26358B' },
+        paragraph: { spacing: { before: 200, after: 100 }, outlineLevel: 3 },
       },
     ],
   },

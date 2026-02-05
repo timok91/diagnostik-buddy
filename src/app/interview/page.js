@@ -362,7 +362,7 @@ BEISPIELE FÜR GUTE INTERVIEWFRAGEN:
 
 STIL:
 - Sachlich-warmherzig, professionell
-- Prägnant (3-5 Sätze pro Antwort), dann Raum für Rückfragen
+- Sei prägnant (3-5 Sätze pro Antwort), dann Raum für Rückfragen
 - Erkläre kurz, warum eine Frage wirksam ist
 - Keine Emojis
 - Deutschsprachig`;
@@ -380,7 +380,12 @@ STIL:
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: updatedChat, systemPrompt, apiKey: sessionData.apiKey })
+        body: JSON.stringify({
+          messages: updatedChat,
+          systemPrompt,
+          apiKey: sessionData.apiKey,
+          model: sessionData.selectedModel
+        })
       });
 
       if (!response.ok) {
@@ -456,7 +461,6 @@ ${hasCandidates ? '- **B6-Bezug:** [Falls relevant: Dimension und Skalenwert, z.
 WICHTIG:
 - Dieser Leitfaden enthält Hypothesen zur Exploration, keine Checkliste zum Abhaken
 - Die Bewertung der Antworten liegt beim Interviewer, nicht beim Leitfaden
-- Flexibilität im Gespräch ist wichtiger als strikte Fragen-Abarbeitung
 
 Sei prägnant, nutze klare Struktur.`;
 
@@ -466,7 +470,9 @@ Sei prägnant, nutze klare Struktur.`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [...sessionData.interviewChat, { role: 'user', content: summaryPrompt }],
-          systemPrompt, apiKey: sessionData.apiKey
+          systemPrompt,
+          apiKey: sessionData.apiKey,
+          model: sessionData.selectedModel
         })
       });
 

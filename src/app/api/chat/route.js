@@ -4,16 +4,17 @@ export const maxDuration = 300;
 
 export async function POST(request) {
   try {
-    const { messages, systemPrompt, apiKey } = await request.json();
+    const { messages, systemPrompt, apiKey, model } = await request.json();
 
     const anthropic = new Anthropic({ apiKey });
 
     console.log('Request - System prompt size:', Math.round(systemPrompt.length / 1024), 'KB');
     console.log('Request - Messages count:', messages.length);
+    console.log('Request - Model:', model || 'claude-sonnet-4-5-20250929');
 
     // Streaming mit der offiziellen SDK
     const stream = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: model || 'claude-sonnet-4-5-20250929',
       max_tokens: 8192,
       system: systemPrompt,
       messages,

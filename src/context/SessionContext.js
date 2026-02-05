@@ -8,7 +8,8 @@ const STORAGE_KEYS = {
   interpretations: 'b6-saved-interpretations',
   interviews: 'b6-saved-interviews',
   apiKey: 'b6-api-key',
-  session: 'b6-current-session'
+  session: 'b6-current-session',
+  model: 'b6-selected-model'
 };
 
 // ID-Generator mit UUID-Unterstützung (verhindert Kollisionen bei schnellen Aufrufen)
@@ -43,26 +44,27 @@ const emptySession = {
   // Aktuelle Session
   currentModule: null,
   isStandardProcess: false,
-  
+
   // Anforderungsanalyse
   selectedAnalysisId: null,
   analysisName: '',
   requirements: '',
   requirementsChat: [],
-  
+
   // Interpretation
   selectedInterpretationId: null,
   candidates: [],
   interpretation: '',
   interpretationChat: [],
-  
+
   // Interview
   selectedInterviewId: null,
   interviewGuide: '',
   interviewChat: [],
-  
+
   // Meta
   apiKey: '',
+  selectedModel: 'claude-sonnet-4-5-20250929',
 };
 
 export function SessionProvider({ children }) {
@@ -110,17 +112,21 @@ export function SessionProvider({ children }) {
       
       // API-Key laden
       const storedApiKey = localStorage.getItem(STORAGE_KEYS.apiKey);
-      
+
+      // Model laden
+      const storedModel = localStorage.getItem(STORAGE_KEYS.model);
+
       // Aktuelle Session laden
       const storedSession = localStorage.getItem(STORAGE_KEYS.session);
       if (storedSession) {
         try {
           const parsedSession = JSON.parse(storedSession);
-          // API-Key aus separatem Storage verwenden (falls vorhanden)
+          // API-Key und Model aus separatem Storage verwenden (falls vorhanden)
           setSessionData({
             ...emptySession,
             ...parsedSession,
-            apiKey: storedApiKey || parsedSession.apiKey || ''
+            apiKey: storedApiKey || parsedSession.apiKey || '',
+            selectedModel: storedModel || parsedSession.selectedModel || 'claude-sonnet-4-5-20250929'
           });
         } catch (e) {
           console.error('Fehler beim Laden der Session:', e);
@@ -128,10 +134,14 @@ export function SessionProvider({ children }) {
             setSessionData(prev => ({ ...prev, apiKey: storedApiKey }));
           }
         }
-      } else if (storedApiKey) {
-        setSessionData(prev => ({ ...prev, apiKey: storedApiKey }));
+      } else if (storedApiKey || storedModel) {
+        setSessionData(prev => ({
+          ...prev,
+          apiKey: storedApiKey || prev.apiKey,
+          selectedModel: storedModel || prev.selectedModel
+        }));
       }
-      
+
       setIsHydrated(true);
     }
   }, []);
@@ -160,6 +170,12 @@ export function SessionProvider({ children }) {
       localStorage.setItem(STORAGE_KEYS.apiKey, sessionData.apiKey);
     }
   }, [sessionData.apiKey, isHydrated]);
+
+  useEffect(() => {
+    if (isHydrated && typeof window !== 'undefined' && sessionData.selectedModel) {
+      localStorage.setItem(STORAGE_KEYS.model, sessionData.selectedModel);
+    }
+  }, [sessionData.selectedModel, isHydrated]);
 
   // Session-Daten persistieren (ohne apiKey, der wird separat gespeichert)
   useEffect(() => {
@@ -199,6 +215,7 @@ export function SessionProvider({ children }) {
         : {
             ...emptySession,
             apiKey: prev.apiKey,
+            selectedModel: prev.selectedModel,
             currentModule: moduleName,
             isStandardProcess,
             selectedAnalysisId: analysisId,

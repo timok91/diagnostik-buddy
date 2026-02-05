@@ -22,6 +22,11 @@ import {
 import { SessionProvider, useSession } from '@/context/SessionContext';
 import { useState } from 'react';
 
+const MODEL_OPTIONS = [
+  { value: 'claude-sonnet-4-5-20250929', label: 'Sonnet 4.5' },
+  { value: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5' },
+];
+
 function HomeContent() {
   const router = useRouter();
   const { 
@@ -344,13 +349,26 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                 <p className="text-sm text-gray-500">B6 Kompakt Assistent</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Einstellungen"
-            >
-              <Settings className="w-5 h-5 text-gray-600" />
-            </button>
+            <div className="flex items-center gap-4">
+              <select
+                value={sessionData.selectedModel}
+                onChange={(e) => updateSession({ selectedModel: e.target.value })}
+                className="px-3 py-1.5 text-sm text-primary border border-iron-200 rounded-lg bg-white hover:border-iron-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
+              >
+                {MODEL_OPTIONS.map((model) => (
+                  <option key={model.value} value={model.value}>
+                    {model.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Einstellungen"
+              >
+                <Settings className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
           </div>
         </div>
       </header>

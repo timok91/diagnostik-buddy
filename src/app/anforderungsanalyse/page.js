@@ -160,7 +160,8 @@ STIL:
         body: JSON.stringify({
           messages: updatedChat,
           systemPrompt,
-          apiKey: sessionData.apiKey
+          apiKey: sessionData.apiKey,
+          model: sessionData.selectedModel
         })
       });
 
@@ -223,7 +224,8 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
             { role: 'user', content: summaryPrompt }
           ],
           systemPrompt,
-          apiKey: sessionData.apiKey
+          apiKey: sessionData.apiKey,
+          model: sessionData.selectedModel
         })
       });
 

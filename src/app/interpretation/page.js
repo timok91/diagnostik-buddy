@@ -280,7 +280,12 @@ STIL:
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: updatedChat, systemPrompt, apiKey: sessionData.apiKey })
+        body: JSON.stringify({
+          messages: updatedChat,
+          systemPrompt,
+          apiKey: sessionData.apiKey,
+          model: sessionData.selectedModel
+        })
       });
 
       if (!response.ok) {
@@ -335,7 +340,9 @@ Sei prägnant, nutze Stichpunkte.`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [...sessionData.interpretationChat, { role: 'user', content: summaryPrompt }],
-          systemPrompt, apiKey: sessionData.apiKey
+          systemPrompt,
+          apiKey: sessionData.apiKey,
+          model: sessionData.selectedModel
         })
       });
 
