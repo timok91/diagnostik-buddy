@@ -7,7 +7,6 @@ const STORAGE_KEYS = {
   analyses: 'b6-saved-analyses',
   interpretations: 'b6-saved-interpretations',
   interviews: 'b6-saved-interviews',
-  apiKey: 'b6-api-key',
   session: 'b6-current-session',
   model: 'b6-selected-model'
 };
@@ -63,7 +62,7 @@ const emptySession = {
   interviewChat: [],
 
   // Meta
-  apiKey: '',
+  hasApiKey: false, // Nur Status, nicht der Key selbst (für Sicherheit)
   selectedModel: 'claude-sonnet-4-5-20250929',
 };
 
@@ -77,6 +76,11 @@ export function SessionProvider({ children }) {
   // Laden aller gespeicherten Daten aus localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Migration: Alten API-Key aus localStorage entfernen (Sicherheitsupgrade)
+      if (localStorage.getItem('b6-api-key')) {
+        localStorage.removeItem('b6-api-key');
+      }
+
       // Analysen laden (mit Validierung)
       const storedAnalyses = localStorage.getItem(STORAGE_KEYS.analyses);
       if (storedAnalyses) {
@@ -109,9 +113,6 @@ export function SessionProvider({ children }) {
           console.error('Fehler beim Laden der Interviews:', e);
         }
       }
-      
-      // API-Key laden
-      const storedApiKey = localStorage.getItem(STORAGE_KEYS.apiKey);
 
       // Model laden
       const storedModel = localStorage.getItem(STORAGE_KEYS.model);
@@ -121,28 +122,34 @@ export function SessionProvider({ children }) {
       if (storedSession) {
         try {
           const parsedSession = JSON.parse(storedSession);
-          // API-Key und Model aus separatem Storage verwenden (falls vorhanden)
           setSessionData({
             ...emptySession,
             ...parsedSession,
-            apiKey: storedApiKey || parsedSession.apiKey || '',
+            hasApiKey: false, // Wird unten vom Server aktualisiert
             selectedModel: storedModel || parsedSession.selectedModel || 'claude-sonnet-4-5-20250929'
           });
         } catch (e) {
           console.error('Fehler beim Laden der Session:', e);
-          if (storedApiKey) {
-            setSessionData(prev => ({ ...prev, apiKey: storedApiKey }));
-          }
         }
-      } else if (storedApiKey || storedModel) {
+      } else if (storedModel) {
         setSessionData(prev => ({
           ...prev,
-          apiKey: storedApiKey || prev.apiKey,
           selectedModel: storedModel || prev.selectedModel
         }));
       }
 
-      setIsHydrated(true);
+      // API Key Status vom Server holen (HTTP-Only Cookie)
+      fetch('/api/set-key')
+        .then(res => res.json())
+        .then(data => {
+          setSessionData(prev => ({ ...prev, hasApiKey: data.hasApiKey }));
+        })
+        .catch(err => {
+          console.error('Fehler beim Prüfen des API-Key Status:', err);
+        })
+        .finally(() => {
+          setIsHydrated(true);
+        });
     }
   }, []);
 
@@ -166,22 +173,16 @@ export function SessionProvider({ children }) {
   }, [savedInterviews, isHydrated]);
 
   useEffect(() => {
-    if (isHydrated && typeof window !== 'undefined' && sessionData.apiKey) {
-      localStorage.setItem(STORAGE_KEYS.apiKey, sessionData.apiKey);
-    }
-  }, [sessionData.apiKey, isHydrated]);
-
-  useEffect(() => {
     if (isHydrated && typeof window !== 'undefined' && sessionData.selectedModel) {
       localStorage.setItem(STORAGE_KEYS.model, sessionData.selectedModel);
     }
   }, [sessionData.selectedModel, isHydrated]);
 
-  // Session-Daten persistieren (ohne apiKey, der wird separat gespeichert)
+  // Session-Daten persistieren (ohne hasApiKey, der kommt vom Server)
   useEffect(() => {
     if (isHydrated && typeof window !== 'undefined') {
       const sessionToStore = { ...sessionData };
-      delete sessionToStore.apiKey; // API-Key separat speichern
+      delete sessionToStore.hasApiKey; // Status kommt vom Server
       localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(sessionToStore));
     }
   }, [sessionData, isHydrated]);
@@ -195,7 +196,8 @@ export function SessionProvider({ children }) {
   const resetSession = () => {
     const newSession = {
       ...emptySession,
-      apiKey: sessionData.apiKey,
+      hasApiKey: sessionData.hasApiKey,
+      selectedModel: sessionData.selectedModel,
     };
     setSessionData(newSession);
     // Auch aus localStorage entfernen
@@ -214,7 +216,7 @@ export function SessionProvider({ children }) {
         ? { ...prev, currentModule: moduleName, isStandardProcess }
         : {
             ...emptySession,
-            apiKey: prev.apiKey,
+            hasApiKey: prev.hasApiKey,
             selectedModel: prev.selectedModel,
             currentModule: moduleName,
             isStandardProcess,

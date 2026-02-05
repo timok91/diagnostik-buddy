@@ -368,7 +368,7 @@ STIL:
 - Deutschsprachig`;
 
   const handleSendMessage = async (message) => {
-    if (!sessionData.apiKey) { toast.error('Bitte API-Key in den Einstellungen hinterlegen'); return; }
+    if (!sessionData.hasApiKey) { toast.error('Bitte API-Key in den Einstellungen hinterlegen'); return; }
 
     const userMessage = { role: 'user', content: message };
     const updatedChat = [...sessionData.interviewChat, userMessage];
@@ -383,7 +383,6 @@ STIL:
         body: JSON.stringify({
           messages: updatedChat,
           systemPrompt,
-          apiKey: sessionData.apiKey,
           model: sessionData.selectedModel
         })
       });
@@ -471,7 +470,6 @@ Sei prägnant, nutze klare Struktur.`;
         body: JSON.stringify({
           messages: [...sessionData.interviewChat, { role: 'user', content: summaryPrompt }],
           systemPrompt,
-          apiKey: sessionData.apiKey,
           model: sessionData.selectedModel
         })
       });

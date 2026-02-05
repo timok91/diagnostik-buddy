@@ -267,7 +267,7 @@ STIL:
 - Deutschsprachig`;
 
   const handleSendMessage = async (message) => {
-    if (!sessionData.apiKey) { toast.error('Bitte API-Key in den Einstellungen hinterlegen'); return; }
+    if (!sessionData.hasApiKey) { toast.error('Bitte API-Key in den Einstellungen hinterlegen'); return; }
     if (sessionData.candidates.length === 0) { toast.warning('Bitte fügen Sie mindestens einen Kandidaten hinzu'); return; }
 
     const userMessage = { role: 'user', content: message };
@@ -283,7 +283,6 @@ STIL:
         body: JSON.stringify({
           messages: updatedChat,
           systemPrompt,
-          apiKey: sessionData.apiKey,
           model: sessionData.selectedModel
         })
       });
@@ -341,7 +340,6 @@ Sei prägnant, nutze Stichpunkte.`;
         body: JSON.stringify({
           messages: [...sessionData.interpretationChat, { role: 'user', content: summaryPrompt }],
           systemPrompt,
-          apiKey: sessionData.apiKey,
           model: sessionData.selectedModel
         })
       });

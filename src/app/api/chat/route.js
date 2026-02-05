@@ -1,11 +1,25 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { cookies } from 'next/headers';
+import { API_KEY_COOKIE_NAME } from '@/lib/api-key-utils';
 
 export const maxDuration = 300;
 
 export async function POST(request) {
   try {
-    const { messages, systemPrompt, apiKey, model } = await request.json();
+    const { messages, systemPrompt, model } = await request.json();
 
+    // API Key aus HTTP-Only Cookie lesen
+    const cookieStore = await cookies();
+    const apiKeyCookie = cookieStore.get(API_KEY_COOKIE_NAME);
+
+    if (!apiKeyCookie || !apiKeyCookie.value) {
+      return new Response(JSON.stringify({ error: 'Kein API-Key hinterlegt. Bitte in den Einstellungen eingeben.' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const apiKey = apiKeyCookie.value;
     const anthropic = new Anthropic({ apiKey });
 
     console.log('Request - System prompt size:', Math.round(systemPrompt.length / 1024), 'KB');

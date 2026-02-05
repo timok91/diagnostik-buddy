@@ -1,11 +1,11 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { 
-  ClipboardList, 
-  Users, 
-  MessageSquare, 
-  PlayCircle, 
-  Trash2, 
+import {
+  ClipboardList,
+  Users,
+  MessageSquare,
+  PlayCircle,
+  Trash2,
   FolderOpen,
   ArrowRight,
   Settings,
@@ -17,10 +17,14 @@ import {
   X,
   Save,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  LogOut,
+  Check,
+  AlertCircle
 } from 'lucide-react';
 import { SessionProvider, useSession } from '@/context/SessionContext';
 import { useState } from 'react';
+import { validateApiKeyFormat } from '@/lib/api-key-utils';
 
 const MODEL_OPTIONS = [
   { value: 'claude-sonnet-4-5-20250929', label: 'Sonnet 4.5' },
@@ -48,14 +52,20 @@ function HomeContent() {
   const [showSettings, setShowSettings] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [deleteType, setDeleteType] = useState(null);
-  
+
+  // API Key States
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [apiKeyError, setApiKeyError] = useState('');
+  const [apiKeyLoading, setApiKeyLoading] = useState(false);
+  const [apiKeySaved, setApiKeySaved] = useState(false);
+
   // Edit Modal States
   const [editingItem, setEditingItem] = useState(null);
   const [editType, setEditType] = useState(null);
   const [editName, setEditName] = useState('');
   const [editContent, setEditContent] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+
   // Collapsed sections
   const [collapsedSections, setCollapsedSections] = useState({
     analyses: false,
@@ -118,6 +128,61 @@ function HomeContent() {
       ...prev,
       [section]: !prev[section]
     }));
+  };
+
+  // API Key speichern
+  const handleSaveApiKey = async () => {
+    setApiKeyError('');
+    setApiKeySaved(false);
+
+    // Client-seitige Validierung
+    const validation = validateApiKeyFormat(apiKeyInput);
+    if (!validation.valid) {
+      setApiKeyError(validation.error);
+      return;
+    }
+
+    setApiKeyLoading(true);
+
+    try {
+      const response = await fetch('/api/set-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: apiKeyInput.trim() })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setApiKeyError(data.error || 'Fehler beim Speichern');
+        return;
+      }
+
+      // Erfolg
+      updateSession({ hasApiKey: true });
+      setApiKeyInput('');
+      setApiKeySaved(true);
+      setTimeout(() => setApiKeySaved(false), 3000);
+    } catch (error) {
+      setApiKeyError('Netzwerkfehler beim Speichern');
+    } finally {
+      setApiKeyLoading(false);
+    }
+  };
+
+  // API Key löschen (Logout)
+  const handleLogoutApiKey = async () => {
+    setApiKeyLoading(true);
+
+    try {
+      await fetch('/api/set-key', { method: 'DELETE' });
+      updateSession({ hasApiKey: false });
+      setApiKeySaved(false);
+    } catch (error) {
+      console.error('Fehler beim Löschen des API-Keys:', error);
+    } finally {
+      setApiKeyLoading(false);
+    }
   };
 
   const handleStartModule = (module) => {
@@ -382,23 +447,84 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Anthropic API-Key
               </label>
-              <input
-                type="password"
-                value={sessionData.apiKey}
-                onChange={(e) => updateSession({ apiKey: e.target.value })}
-                placeholder="sk-ant-..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-              <p className="mt-2 text-sm text-gray-500">
+
+              {sessionData.hasApiKey ? (
+                // API Key ist gesetzt - Logout anzeigen
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 px-4 py-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <span className="text-green-700">API-Key ist hinterlegt</span>
+                  </div>
+                  <button
+                    onClick={handleLogoutApiKey}
+                    disabled={apiKeyLoading}
+                    className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Entfernen
+                  </button>
+                </div>
+              ) : (
+                // Kein API Key - Eingabe anzeigen
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <input
+                      type="password"
+                      value={apiKeyInput}
+                      onChange={(e) => {
+                        setApiKeyInput(e.target.value);
+                        setApiKeyError('');
+                        setApiKeySaved(false);
+                      }}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSaveApiKey()}
+                      placeholder="sk-ant-..."
+                      className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
+                        apiKeyError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      }`}
+                    />
+                    <button
+                      onClick={handleSaveApiKey}
+                      disabled={apiKeyLoading || !apiKeyInput.trim()}
+                      className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {apiKeyLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                      Speichern
+                    </button>
+                  </div>
+
+                  {apiKeyError && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      {apiKeyError}
+                    </div>
+                  )}
+
+                  {apiKeySaved && (
+                    <div className="flex items-center gap-2 text-green-600 text-sm">
+                      <Check className="w-4 h-4" />
+                      API-Key erfolgreich gespeichert
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <p className="mt-3 text-sm text-gray-500">
                 Holen Sie sich einen API-Key auf{' '}
-                <a 
-                  href="https://console.anthropic.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href="https://console.anthropic.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
                   console.anthropic.com
                 </a>
+              </p>
+              <p className="mt-1 text-xs text-gray-400">
+                Der API-Key wird sicher als HTTP-Only Cookie gespeichert und ist nicht per JavaScript auslesbar.
               </p>
             </div>
           </div>

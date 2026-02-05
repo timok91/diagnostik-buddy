@@ -141,14 +141,14 @@ STIL:
 - Deutschsprachig`;
 
   const handleSendMessage = async (message) => {
-    if (!sessionData.apiKey) {
+    if (!sessionData.hasApiKey) {
       toast.error('Bitte API-Key in den Einstellungen hinterlegen (Zahnrad-Symbol auf der Startseite)');
       return;
     }
 
     const userMessage = { role: 'user', content: message };
     const updatedChat = [...sessionData.requirementsChat, userMessage];
-    
+
     updateSession({ requirementsChat: updatedChat });
     setIsLoading(true);
     setIsSaved(false);
@@ -160,7 +160,6 @@ STIL:
         body: JSON.stringify({
           messages: updatedChat,
           systemPrompt,
-          apiKey: sessionData.apiKey,
           model: sessionData.selectedModel
         })
       });
@@ -224,7 +223,6 @@ Sei prägnant und konkret. Nutze Stichpunkte. Keine Einleitung, direkt zur Sache
             { role: 'user', content: summaryPrompt }
           ],
           systemPrompt,
-          apiKey: sessionData.apiKey,
           model: sessionData.selectedModel
         })
       });
