@@ -553,6 +553,22 @@ export function SessionProvider({ children }) {
     }));
   };
 
+  const addCandidateWithDimensions = ({ name, dimensions }) => {
+    const defaultDims = {
+      ICH: 4, WIR: 4, DENKEN: 4, TUN: 4,
+      'Ich bin o.k.': 4, 'Du bist o.k.': 4,
+      Regeneration: 4, 'Umgang mit Emotionen': 4, Leistungsmotivation: 4,
+    };
+    setSessionData(prev => ({
+      ...prev,
+      candidates: [...prev.candidates, {
+        id: generateId(),
+        name,
+        dimensions: { ...defaultDims, ...dimensions },
+      }]
+    }));
+  };
+
   const updateCandidate = (id, updates) => {
     setSessionData(prev => ({
       ...prev,
@@ -633,6 +649,7 @@ export function SessionProvider({ children }) {
       loadInterview,
       // Kandidaten
       addCandidate,
+      addCandidateWithDimensions,
       updateCandidate,
       removeCandidate,
       // Navigation

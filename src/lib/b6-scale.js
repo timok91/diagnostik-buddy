@@ -28,15 +28,15 @@ export const B6_DIMENSIONS = [
  * Dimensionsbeschreibungen für System-Prompts
  */
 export const B6_DIMENSION_DESCRIPTIONS = {
-  'ICH': 'Durchsetzungsfähigkeit, Eigeninitiative, Selbstbehauptung',
-  'WIR': 'Teamorientierung, Kooperationsbereitschaft, Einfühlungsvermögen',
-  'DENKEN': 'Analytisches Denken, Problemlösefähigkeit, konzeptionelles Arbeiten',
-  'TUN': 'Umsetzungsorientierung, Handlungsbereitschaft, Pragmatismus',
-  'Ich bin o.k.': 'Selbstwert, emotionale Stabilität, Selbstakzeptanz',
-  'Du bist o.k.': 'Vertrauen in andere, positive Grundhaltung gegenüber anderen',
-  'Regeneration': 'Stressresistenz, Erholungsfähigkeit, Work-Life-Balance',
-  'Umgang mit Emotionen': 'Emotionsregulation, Gelassenheit, Selbstkontrolle',
-  'Leistungsmotivation': 'Leistungsbereitschaft, Ehrgeiz, Zielorientierung'
+  'ICH': 'Durchsetzungsfähigkeit, Meinungsbehauptung, Führungsübernahme',
+  'WIR': 'Empathie, Altruismus, Kooperationsbereitschaft',
+  'DENKEN': 'Sorgfalt, Planung, Strukturiertheit, systematisches Arbeiten',
+  'TUN': 'Handlungsschnelligkeit, Entscheidungsfreude, Pragmatismus',
+  'Ich bin o.k.': 'Selbstwert, Selbstwirksamkeit, Resilienz bei Misserfolgen',
+  'Du bist o.k.': 'Vertrauen in andere, positives Menschenbild',
+  'Regeneration': 'Erholungsfähigkeit, Abschalten von beruflichem Stress',
+  'Umgang mit Emotionen': 'Emotionsregulation, Impulskontrolle',
+  'Leistungsmotivation': 'Leistungsstreben, Ehrgeiz, Zielorientierung'
 };
 
 /**

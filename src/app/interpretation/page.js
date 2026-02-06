@@ -5,10 +5,10 @@ import { useState, useEffect } from 'react';
 import ChatInterface from '@/components/ChatInterface';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import DimensionSlider from '@/components/DimensionSlider';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  Home, 
+import {
+  CheckCircle,
+  AlertCircle,
+  Home,
   ArrowRight,
   User,
   Plus,
@@ -17,7 +17,8 @@ import {
   ChevronUp,
   FileText,
   Users,
-  Save
+  Save,
+  Upload
 } from 'lucide-react';
 import {
   B6_DIMENSIONS,
@@ -26,6 +27,7 @@ import {
   getB6SystemPromptSection
 } from '@/lib/b6-scale';
 import { useToast } from '@/components/Toast';
+import ProfileImportModal from '@/components/ProfileImportModal';
 
 const SUGGESTIONS = [
   'Gib mir eine Übersicht über die Profile aller Kandidaten',
@@ -160,7 +162,7 @@ function CandidateCard({ candidate, onUpdate, onRemove, isExpanded, onToggle }) 
 
 function InterpretationContent() {
   const {
-    sessionData, updateSession, loadAnalysis, addCandidate, updateCandidate, removeCandidate,
+    sessionData, updateSession, loadAnalysis, addCandidate, addCandidateWithDimensions, updateCandidate, removeCandidate,
     saveInterpretation, updateInterpretation, nextModule, savedAnalyses, isHydrated
   } = useSession();
   const router = useRouter();
@@ -174,6 +176,7 @@ function InterpretationContent() {
   const [newCandidateName, setNewCandidateName] = useState('');
   const [expandedCandidates, setExpandedCandidates] = useState(new Set());
   const [showCandidatePanel, setShowCandidatePanel] = useState(true);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [isSaved, setIsSaved] = useState(!!sessionData.selectedInterpretationId);
 
   useEffect(() => {
@@ -197,6 +200,13 @@ function InterpretationContent() {
     if (!newCandidateName.trim()) return;
     addCandidate({ name: newCandidateName.trim() });
     setNewCandidateName('');
+    setIsSaved(false);
+  };
+
+  const handleImportCandidates = (candidates) => {
+    candidates.forEach(c => {
+      addCandidateWithDimensions({ name: c.name, dimensions: c.dimensions });
+    });
     setIsSaved(false);
   };
 
@@ -404,6 +414,7 @@ Sei prägnant, nutze Stichpunkte.`;
   return (
     <div className="h-screen bg-iron-100 flex flex-col overflow-hidden">
       {showAnalysisSelector && <AnalysisSelector onSelect={handleSelectAnalysis} onCancel={() => router.push('/')} />}
+      <ProfileImportModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} onImport={handleImportCandidates} />
 
       <header className="bg-white border-b border-iron-200 shadow-sm flex-shrink-0">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -458,7 +469,7 @@ Sei prägnant, nutze Stichpunkte.`;
               </button>
             </div>
 
-            <div className="p-3 border-b border-iron-200 flex-shrink-0">
+            <div className="p-3 border-b border-iron-200 flex-shrink-0 space-y-2">
               <div className="flex gap-2">
                 <input type="text" value={newCandidateName} onChange={(e) => setNewCandidateName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddCandidate()} placeholder="Name eingeben..."
@@ -468,6 +479,13 @@ Sei prägnant, nutze Stichpunkte.`;
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="w-full px-3 py-2 text-sm text-gray-600 border-2 border-dashed border-iron-300 rounded-lg hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Profil importieren (PDF)
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
