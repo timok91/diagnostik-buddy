@@ -18,7 +18,8 @@ import {
   FileText,
   Users,
   Save,
-  Upload
+  Upload,
+  BarChart3
 } from 'lucide-react';
 import {
   B6_DIMENSIONS,
@@ -28,6 +29,7 @@ import {
 } from '@/lib/b6-scale';
 import { useToast } from '@/components/Toast';
 import ProfileImportModal from '@/components/ProfileImportModal';
+import RadarChartPanel from '@/components/RadarChartPanel';
 
 const SUGGESTIONS = [
   'Gib mir eine Übersicht über die Profile aller Kandidaten',
@@ -177,6 +179,8 @@ function InterpretationContent() {
   const [expandedCandidates, setExpandedCandidates] = useState(new Set());
   const [showCandidatePanel, setShowCandidatePanel] = useState(true);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showRadarPanel, setShowRadarPanel] = useState(false);
+  const [radarSelectedCandidates, setRadarSelectedCandidates] = useState(new Set());
   const [isSaved, setIsSaved] = useState(!!sessionData.selectedInterpretationId);
 
   useEffect(() => {
@@ -190,6 +194,10 @@ function InterpretationContent() {
       setInterpretationName(`Interpretation: ${sessionData.analysisName}`);
     }
   }, [sessionData.analysisName]);
+
+  useEffect(() => {
+    setRadarSelectedCandidates(new Set(sessionData.candidates.map(c => c.id)));
+  }, [sessionData.candidates]);
 
   const handleSelectAnalysis = (analysis) => {
     loadAnalysis(analysis.id);
@@ -208,6 +216,15 @@ function InterpretationContent() {
       addCandidateWithDimensions({ name: c.name, dimensions: c.dimensions });
     });
     setIsSaved(false);
+  };
+
+  const toggleRadarCandidate = (id) => {
+    setRadarSelectedCandidates(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const toggleCandidate = (id) => {
@@ -464,9 +481,19 @@ Sei prägnant, nutze Stichpunkte.`;
                 <h2 className="font-semibold text-gray-900">Kandidaten</h2>
                 <span className="text-sm text-gray-500">({sessionData.candidates.length})</span>
               </div>
-              <button onClick={() => setShowCandidatePanel(false)} className="lg:hidden p-1 hover:bg-iron-200 rounded">
-                <ChevronUp className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setShowRadarPanel(true)}
+                  disabled={sessionData.candidates.length === 0}
+                  className="p-1.5 hover:bg-iron-200 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Profilvergleich (Radar-Chart)"
+                >
+                  <BarChart3 className="w-4 h-4 text-primary" />
+                </button>
+                <button onClick={() => setShowCandidatePanel(false)} className="lg:hidden p-1 hover:bg-iron-200 rounded">
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <div className="p-3 border-b border-iron-200 flex-shrink-0 space-y-2">
@@ -608,6 +635,14 @@ Sei prägnant, nutze Stichpunkte.`;
           </div>
         </div>
       </div>
+
+      <RadarChartPanel
+        isOpen={showRadarPanel}
+        onClose={() => setShowRadarPanel(false)}
+        candidates={sessionData.candidates}
+        selectedCandidateIds={radarSelectedCandidates}
+        onToggleCandidate={toggleRadarCandidate}
+      />
     </div>
   );
 }
