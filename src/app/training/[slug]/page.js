@@ -82,11 +82,11 @@ export async function generateMetadata({ params }) {
 export default async function ArticlePage({ params }) {
   const { slug } = await params;
   const article = getArticleBySlug(slug);
-  
-  if (!article) {
+
+  if (!article || article.status === 'draft') {
     notFound();
   }
-  
+
   const { prev, next } = getAdjacentArticles(slug);
   
   return (

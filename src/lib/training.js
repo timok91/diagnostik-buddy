@@ -11,25 +11,27 @@ const isValidSlug = (slug) => {
 
 /**
  * Alle Artikel-Metadaten laden (für Übersichtsseite)
+ * @param {Object} options - Optionen
+ * @param {boolean} options.includeDrafts - Drafts einschließen (für Admin-Zwecke)
  */
-export function getAllArticles() {
+export function getAllArticles({ includeDrafts = false } = {}) {
   // Prüfen ob Verzeichnis existiert
   if (!fs.existsSync(CONTENT_DIR)) {
     return [];
   }
 
   const files = fs.readdirSync(CONTENT_DIR).filter(file => file.endsWith('.mdx'));
-  
+
   const articles = files.map(filename => {
     const slug = filename.replace('.mdx', '');
     const filePath = path.join(CONTENT_DIR, filename);
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     const { data, content } = matter(fileContent);
-    
+
     // Lesezeit berechnen (ca. 200 Wörter pro Minute)
     const wordCount = content.split(/\s+/).length;
     const readingTime = Math.ceil(wordCount / 200);
-    
+
     return {
       slug,
       title: data.title || slug,
@@ -40,13 +42,19 @@ export function getAllArticles() {
       publishedAt: data.publishedAt || null,
       coverImage: data.coverImage || null,
       tags: data.tags || [],
+      status: data.status || 'published',
       // Für die Suche: Ersten 500 Zeichen des Contents
       excerpt: content.replace(/[#*`\[\]<>]/g, '').substring(0, 500),
     };
   });
-  
+
+  // Draft-Artikel filtern (außer wenn includeDrafts=true)
+  const filteredArticles = includeDrafts
+    ? articles
+    : articles.filter(a => a.status !== 'draft');
+
   // Nach Order sortieren, dann nach Titel
-  return articles.sort((a, b) => {
+  return filteredArticles.sort((a, b) => {
     if (a.order !== b.order) return a.order - b.order;
     return a.title.localeCompare(b.title, 'de');
   });
@@ -84,6 +92,7 @@ export function getArticleBySlug(slug) {
     publishedAt: data.publishedAt || null,
     coverImage: data.coverImage || null,
     tags: data.tags || [],
+    status: data.status || 'published',
     content, // Raw MDX content
   };
 }
