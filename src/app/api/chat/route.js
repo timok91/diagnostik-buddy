@@ -37,18 +37,35 @@ export async function POST(request) {
 
     // Stream als plain text an Frontend senden
     const encoder = new TextEncoder();
+    const abortController = new AbortController();
+
     const readableStream = new ReadableStream({
       async start(controller) {
         try {
           for await (const event of stream) {
+            // Prüfen ob abgebrochen wurde
+            if (abortController.signal.aborted) {
+              break;
+            }
             if (event.type === 'content_block_delta' && event.delta?.text) {
               controller.enqueue(encoder.encode(event.delta.text));
             }
           }
           controller.close();
         } catch (error) {
-          console.error('Stream error:', error);
-          controller.error(error);
+          // Ignoriere Fehler bei Abbruch
+          if (!abortController.signal.aborted) {
+            console.error('Stream error:', error);
+            controller.error(error);
+          }
+        }
+      },
+      cancel() {
+        console.log('Stream cancelled by client');
+        abortController.abort();
+        // Anthropic Stream abbrechen falls möglich
+        if (stream.controller) {
+          stream.controller.abort();
         }
       },
     });
