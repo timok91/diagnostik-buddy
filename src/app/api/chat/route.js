@@ -26,12 +26,46 @@ export async function POST(request) {
     console.log('Request - Messages count:', messages.length);
     console.log('Request - Model:', model || 'claude-sonnet-4-5-20250929');
 
-    // Streaming mit der offiziellen SDK
+    // System-Prompt als Array mit Cache-Control
+    const systemContent = [
+      {
+        type: 'text',
+        text: systemPrompt,
+        cache_control: { type: 'ephemeral' }
+      }
+    ];
+
+    // Cache-Breakpoint auf der vorletzten User-Nachricht setzen
+    // (damit alle bisherigen Nachrichten gecacht werden, nur die letzte ist neu)
+    const userMessageCount = messages.filter(m => m.role === 'user').length;
+    let lastUserSeen = false;
+    const cachedMessages = messages.map((msg, idx) => {
+      if (msg.role === 'user' && userMessageCount >= 2 && !lastUserSeen) {
+        // Prüfen ob dies die vorletzte User-Nachricht ist
+        const remainingUserMsgs = messages.slice(idx + 1).filter(m => m.role === 'user').length;
+        if (remainingUserMsgs === 1) {
+          lastUserSeen = true;
+          return {
+            role: msg.role,
+            content: [
+              {
+                type: 'text',
+                text: typeof msg.content === 'string' ? msg.content : msg.content,
+                cache_control: { type: 'ephemeral' }
+              }
+            ]
+          };
+        }
+      }
+      return msg;
+    });
+
+    // Streaming mit der offiziellen SDK + Prompt Caching
     const stream = await anthropic.messages.create({
       model: model || 'claude-sonnet-4-5-20250929',
       max_tokens: 8192,
-      system: systemPrompt,
-      messages,
+      system: systemContent,
+      messages: cachedMessages,
       stream: true,
     });
 
@@ -46,6 +80,14 @@ export async function POST(request) {
             // Prüfen ob abgebrochen wurde
             if (abortController.signal.aborted) {
               break;
+            }
+            if (event.type === 'message_start') {
+              const usage = event.message?.usage;
+              if (usage) {
+                console.log('Cache - Input:', usage.input_tokens,
+                            '| Cache creation:', usage.cache_creation_input_tokens || 0,
+                            '| Cache read:', usage.cache_read_input_tokens || 0);
+              }
             }
             if (event.type === 'content_block_delta' && event.delta?.text) {
               controller.enqueue(encoder.encode(event.delta.text));
