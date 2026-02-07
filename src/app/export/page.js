@@ -3,11 +3,12 @@ import { useSession, SessionProvider } from '@/context/SessionContext';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { FileText, Download, CheckCircle, Home, RefreshCw, ChevronDown, FileIcon } from 'lucide-react';
-import { 
-  generateRequirementsDocx, 
-  generateInterpretationDocx, 
-  generateInterviewDocx, 
-  downloadDocx 
+import {
+  generateRequirementsDocx,
+  generateInterpretationDocx,
+  generateInterviewDocx,
+  generateOnboardingDocx,
+  downloadDocx
 } from '@/lib/docx-export';
 
 function DownloadButton({ label, onDownloadTxt, onDownloadDocx, disabled }) {
@@ -79,7 +80,7 @@ function DownloadButton({ label, onDownloadTxt, onDownloadDocx, disabled }) {
 }
 
 function ExportContent() {
-  const { sessionData, savedAnalyses, savedInterpretations, savedInterviews, resetSession, isHydrated } = useSession();
+  const { sessionData, savedAnalyses, savedInterpretations, savedInterviews, savedOnboardings, resetSession, isHydrated } = useSession();
   const router = useRouter();
 
   // Get data from session or find in saved data
@@ -95,10 +96,15 @@ function ExportContent() {
     ? savedInterviews.find(i => i.id === sessionData.selectedInterviewId)
     : null;
 
+  const currentOnboarding = sessionData.selectedOnboardingId
+    ? savedOnboardings.find(o => o.id === sessionData.selectedOnboardingId)
+    : null;
+
   // Use session data first, fall back to saved data
   const requirements = sessionData.requirements || currentAnalysis?.requirements || '';
   const interpretation = sessionData.interpretation || currentInterpretation?.interpretation || '';
   const interviewGuide = sessionData.interviewGuide || currentInterview?.guide || '';
+  const onboardingGuide = sessionData.onboardingGuide || currentOnboarding?.guide || '';
   const candidates = sessionData.candidates?.length > 0 
     ? sessionData.candidates 
     : currentInterpretation?.candidates || currentInterview?.candidates || [];
@@ -253,6 +259,50 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
     downloadDocx(blob, `Interviewleitfaden_${analysisName || 'Export'}_${Date.now()}`);
   };
 
+  // Onboarding Downloads
+  const handleDownloadOnboardingTxt = () => {
+    if (!onboardingGuide) { alert('Kein Onboarding-Leitfaden vorhanden'); return; }
+    const content = `ONBOARDING-LEITFADEN
+${'='.repeat(80)}
+
+Anforderungsanalyse: ${analysisName || 'Nicht benannt'}
+Erstellt: ${new Date().toLocaleDateString('de-DE')}
+
+${'='.repeat(80)}
+
+${candidates.length > 0 ? `KANDIDATEN:
+${candidates.map(c => `- ${c.name}`).join('\n')}
+
+${'='.repeat(80)}
+` : ''}${onboardingGuide}
+
+${'='.repeat(80)}
+
+HINWEISE ZUR NUTZUNG:
+- Dieser Leitfaden basiert auf B6-Profildaten und Gesprächserkenntnissen
+- Alle Empfehlungen sind Hypothesen und sollten an die reale Situation angepasst werden
+- Der Leitfaden ist als lebendiges Dokument gedacht
+
+${'='.repeat(80)}
+Erstellt mit Balanced Six - B6 Kompakt Assistent
+`;
+    downloadAsText(content, `Onboarding_${analysisName || 'Export'}_${Date.now()}.txt`);
+  };
+
+  const handleDownloadOnboardingDocx = async () => {
+    if (!onboardingGuide) { alert('Kein Onboarding-Leitfaden vorhanden'); return; }
+    const blob = await generateOnboardingDocx({
+      name: `Onboarding: ${analysisName}`,
+      analysisName,
+      requirements,
+      interpretation,
+      candidates,
+      interviewGuide,
+      guide: onboardingGuide,
+    });
+    downloadDocx(blob, `Onboarding_${analysisName || 'Export'}_${Date.now()}`);
+  };
+
   const handleDownloadAll = async () => {
     if (hasRequirements) {
       handleDownloadRequirementsTxt();
@@ -270,6 +320,12 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
         await handleDownloadInterviewDocx();
       }, 1000);
     }
+    if (hasOnboarding) {
+      setTimeout(async () => {
+        handleDownloadOnboardingTxt();
+        await handleDownloadOnboardingDocx();
+      }, 1500);
+    }
   };
 
   const handleNewSession = () => {
@@ -282,7 +338,8 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
   const hasRequirements = !!requirements;
   const hasInterpretation = !!interpretation;
   const hasInterview = !!interviewGuide;
-  const hasAnyContent = hasRequirements || hasInterpretation || hasInterview;
+  const hasOnboarding = !!onboardingGuide;
+  const hasAnyContent = hasRequirements || hasInterpretation || hasInterview || hasOnboarding;
 
   if (!isHydrated) {
     return (
@@ -408,6 +465,30 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                       onDownloadTxt={handleDownloadInterviewTxt}
                       onDownloadDocx={handleDownloadInterviewDocx}
                       disabled={!hasInterview}
+                    />
+                  </div>
+                </div>
+
+                {/* Onboarding */}
+                <div className={`p-6 rounded-lg border-2 ${hasOnboarding ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4 flex-1">
+                      <FileText className={`w-8 h-8 mt-1 ${hasOnboarding ? 'text-green-600' : 'text-gray-400'}`} />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1">Onboarding-Leitfaden</h3>
+                        <p className="text-sm text-gray-600 mb-3">Personenorientierte Onboarding-Empfehlungen</p>
+                        {hasOnboarding && (
+                          <div className="bg-white rounded p-3 text-xs text-gray-700 max-h-24 overflow-y-auto border border-gray-200">
+                            {onboardingGuide.substring(0, 200)}...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <DownloadButton
+                      label="Download"
+                      onDownloadTxt={handleDownloadOnboardingTxt}
+                      onDownloadDocx={handleDownloadOnboardingDocx}
+                      disabled={!hasOnboarding}
                     />
                   </div>
                 </div>

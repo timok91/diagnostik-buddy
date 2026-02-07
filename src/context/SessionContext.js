@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   analyses: 'b6-saved-analyses',
   interpretations: 'b6-saved-interpretations',
   interviews: 'b6-saved-interviews',
+  onboardings: 'b6-saved-onboardings',
   session: 'b6-current-session',
   model: 'b6-selected-model'
 };
@@ -30,6 +31,10 @@ const isValidInterpretation = (item) => {
 };
 
 const isValidInterview = (item) => {
+  return item && typeof item === 'object' && typeof item.id === 'string';
+};
+
+const isValidOnboarding = (item) => {
   return item && typeof item === 'object' && typeof item.id === 'string';
 };
 
@@ -61,6 +66,11 @@ const emptySession = {
   interviewGuide: '',
   interviewChat: [],
 
+  // Onboarding
+  selectedOnboardingId: null,
+  onboardingGuide: '',
+  onboardingChat: [],
+
   // Meta
   hasApiKey: false, // Nur Status, nicht der Key selbst (für Sicherheit)
   selectedModel: 'claude-sonnet-4-5-20250929',
@@ -71,6 +81,7 @@ export function SessionProvider({ children }) {
   const [savedAnalyses, setSavedAnalyses] = useState([]);
   const [savedInterpretations, setSavedInterpretations] = useState([]);
   const [savedInterviews, setSavedInterviews] = useState([]);
+  const [savedOnboardings, setSavedOnboardings] = useState([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Laden aller gespeicherten Daten aus localStorage
@@ -111,6 +122,17 @@ export function SessionProvider({ children }) {
           setSavedInterviews(validateArray(parsed, isValidInterview));
         } catch (e) {
           console.error('Fehler beim Laden der Interviews:', e);
+        }
+      }
+
+      // Onboardings laden (mit Validierung)
+      const storedOnboardings = localStorage.getItem(STORAGE_KEYS.onboardings);
+      if (storedOnboardings) {
+        try {
+          const parsed = JSON.parse(storedOnboardings);
+          setSavedOnboardings(validateArray(parsed, isValidOnboarding));
+        } catch (e) {
+          console.error('Fehler beim Laden der Onboardings:', e);
         }
       }
 
@@ -173,6 +195,12 @@ export function SessionProvider({ children }) {
   }, [savedInterviews, isHydrated]);
 
   useEffect(() => {
+    if (isHydrated && typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.onboardings, JSON.stringify(savedOnboardings));
+    }
+  }, [savedOnboardings, isHydrated]);
+
+  useEffect(() => {
     if (isHydrated && typeof window !== 'undefined' && sessionData.selectedModel) {
       localStorage.setItem(STORAGE_KEYS.model, sessionData.selectedModel);
     }
@@ -208,7 +236,7 @@ export function SessionProvider({ children }) {
 
   // Modul starten (ohne kompletten Reset) - alle Updates in einem einzigen setState-Aufruf
   const startModule = (moduleName, options = {}) => {
-    const { isStandardProcess = false, analysisId = null, interpretationId = null, interviewId = null, keepData = false } = options;
+    const { isStandardProcess = false, analysisId = null, interpretationId = null, interviewId = null, onboardingId = null, keepData = false } = options;
 
     setSessionData(prev => {
       // Basis-Session erstellen
@@ -275,6 +303,27 @@ export function SessionProvider({ children }) {
         }
       }
 
+      // Onboarding laden (falls vorhanden)
+      if (onboardingId) {
+        const onboarding = savedOnboardings.find(o => o.id === onboardingId);
+        if (onboarding) {
+          newSession = {
+            ...newSession,
+            selectedOnboardingId: onboarding.id,
+            selectedAnalysisId: onboarding.analysisId,
+            analysisName: onboarding.analysisName,
+            requirements: onboarding.requirements || newSession.requirements,
+            selectedInterpretationId: onboarding.interpretationId,
+            candidates: onboarding.candidates || newSession.candidates,
+            interpretation: onboarding.interpretation || newSession.interpretation,
+            selectedInterviewId: onboarding.interviewId || newSession.selectedInterviewId,
+            interviewGuide: onboarding.interviewGuide || newSession.interviewGuide,
+            onboardingGuide: onboarding.guide,
+            onboardingChat: onboarding.chat || [],
+          };
+        }
+      }
+
       return newSession;
     });
   };
@@ -337,10 +386,11 @@ export function SessionProvider({ children }) {
 
   const deleteAnalysis = (id) => {
     setSavedAnalyses(prev => prev.filter(a => a.id !== id));
-    // Auch verknüpfte Interpretationen und Interviews löschen
+    // Auch verknüpfte Interpretationen, Interviews und Onboardings löschen
     setSavedInterpretations(prev => prev.filter(i => i.analysisId !== id));
     setSavedInterviews(prev => prev.filter(i => i.analysisId !== id));
-    
+    setSavedOnboardings(prev => prev.filter(o => o.analysisId !== id));
+
     if (sessionData.selectedAnalysisId === id) {
       updateSession({ selectedAnalysisId: null, analysisName: '', requirements: '', requirementsChat: [] });
     }
@@ -416,9 +466,10 @@ export function SessionProvider({ children }) {
 
   const deleteInterpretation = (id) => {
     setSavedInterpretations(prev => prev.filter(i => i.id !== id));
-    // Auch verknüpfte Interviews löschen
+    // Auch verknüpfte Interviews und Onboardings löschen
     setSavedInterviews(prev => prev.filter(i => i.interpretationId !== id));
-    
+    setSavedOnboardings(prev => prev.filter(o => o.interpretationId !== id));
+
     if (sessionData.selectedInterpretationId === id) {
       updateSession({ selectedInterpretationId: null, interpretation: '', interpretationChat: [], candidates: [] });
     }
@@ -529,6 +580,94 @@ export function SessionProvider({ children }) {
   };
 
   // =====================
+  // ONBOARDING-LEITFÄDEN
+  // =====================
+
+  const saveOnboarding = (name, guide) => {
+    const newOnboarding = {
+      id: generateId(),
+      name: name || `Onboarding: ${sessionData.analysisName}`,
+      analysisId: sessionData.selectedAnalysisId,
+      analysisName: sessionData.analysisName,
+      requirements: sessionData.requirements,
+      interpretationId: sessionData.selectedInterpretationId,
+      interpretation: sessionData.interpretation,
+      candidates: sessionData.candidates,
+      interviewId: sessionData.selectedInterviewId || null,
+      interviewGuide: sessionData.interviewGuide || '',
+      guide: guide || sessionData.onboardingGuide,
+      chat: sessionData.onboardingChat,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setSavedOnboardings(prev => [newOnboarding, ...prev]);
+    updateSession({ selectedOnboardingId: newOnboarding.id, onboardingGuide: guide });
+
+    return newOnboarding;
+  };
+
+  const updateOnboarding = (id) => {
+    setSavedOnboardings(prev => prev.map(onboarding => {
+      if (onboarding.id === id) {
+        return {
+          ...onboarding,
+          guide: sessionData.onboardingGuide,
+          chat: sessionData.onboardingChat,
+          candidates: sessionData.candidates,
+          interpretation: sessionData.interpretation,
+          interviewGuide: sessionData.interviewGuide || onboarding.interviewGuide,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return onboarding;
+    }));
+  };
+
+  const updateOnboardingDirect = (id, updates) => {
+    setSavedOnboardings(prev => prev.map(onboarding => {
+      if (onboarding.id === id) {
+        return {
+          ...onboarding,
+          name: updates.name !== undefined ? updates.name : onboarding.name,
+          guide: updates.guide !== undefined ? updates.guide : onboarding.guide,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return onboarding;
+    }));
+  };
+
+  const deleteOnboarding = (id) => {
+    setSavedOnboardings(prev => prev.filter(o => o.id !== id));
+
+    if (sessionData.selectedOnboardingId === id) {
+      updateSession({ selectedOnboardingId: null, onboardingGuide: '', onboardingChat: [] });
+    }
+  };
+
+  const loadOnboarding = (id) => {
+    const onboarding = savedOnboardings.find(o => o.id === id);
+    if (onboarding) {
+      updateSession({
+        selectedOnboardingId: onboarding.id,
+        selectedAnalysisId: onboarding.analysisId,
+        analysisName: onboarding.analysisName,
+        requirements: onboarding.requirements,
+        selectedInterpretationId: onboarding.interpretationId,
+        interpretation: onboarding.interpretation,
+        candidates: onboarding.candidates || [],
+        selectedInterviewId: onboarding.interviewId || null,
+        interviewGuide: onboarding.interviewGuide || '',
+        onboardingGuide: onboarding.guide,
+        onboardingChat: onboarding.chat || [],
+      });
+      return onboarding;
+    }
+    return null;
+  };
+
+  // =====================
   // KANDIDATEN
   // =====================
 
@@ -611,8 +750,11 @@ export function SessionProvider({ children }) {
         return !!sessionData.requirements || !!sessionData.selectedAnalysisId;
       case 'interview':
         return !!sessionData.requirements || !!sessionData.selectedAnalysisId;
+      case 'onboarding':
+        return (!!sessionData.requirements || !!sessionData.selectedAnalysisId)
+          && (!!sessionData.interpretation || !!sessionData.selectedInterpretationId);
       case 'export':
-        return !!sessionData.requirements || !!sessionData.interpretation || !!sessionData.interviewGuide;
+        return !!sessionData.requirements || !!sessionData.interpretation || !!sessionData.interviewGuide || !!sessionData.onboardingGuide;
       default:
         return false;
     }
@@ -624,6 +766,7 @@ export function SessionProvider({ children }) {
       savedAnalyses,
       savedInterpretations,
       savedInterviews,
+      savedOnboardings,
       isHydrated,
       updateSession,
       resetSession,
@@ -647,6 +790,12 @@ export function SessionProvider({ children }) {
       updateInterviewDirect,
       deleteInterview,
       loadInterview,
+      // Onboardings
+      saveOnboarding,
+      updateOnboarding,
+      updateOnboardingDirect,
+      deleteOnboarding,
+      loadOnboarding,
       // Kandidaten
       addCandidate,
       addCandidateWithDimensions,

@@ -20,7 +20,8 @@ import {
   ChevronUp,
   LogOut,
   Check,
-  AlertCircle
+  AlertCircle,
+  UserPlus
 } from 'lucide-react';
 import { SessionProvider, useSession } from '@/context/SessionContext';
 import { useState } from 'react';
@@ -33,20 +34,23 @@ const MODEL_OPTIONS = [
 
 function HomeContent() {
   const router = useRouter();
-  const { 
-    savedAnalyses, 
+  const {
+    savedAnalyses,
     savedInterpretations,
     savedInterviews,
+    savedOnboardings,
     deleteAnalysis,
     deleteInterpretation,
     deleteInterview,
+    deleteOnboarding,
     updateAnalysisDirect,
     updateInterpretationDirect,
     updateInterviewDirect,
-    startModule, 
+    updateOnboardingDirect,
+    startModule,
     updateSession,
     sessionData,
-    isHydrated 
+    isHydrated
   } = useSession();
   
   const [showSettings, setShowSettings] = useState(false);
@@ -70,7 +74,8 @@ function HomeContent() {
   const [collapsedSections, setCollapsedSections] = useState({
     analyses: false,
     interpretations: true,
-    interviews: true
+    interviews: true,
+    onboardings: true
   });
 
   const modules = [
@@ -108,6 +113,18 @@ function HomeContent() {
       available: true,
       requiresAnalysis: true,
       route: '/interview'
+    },
+    {
+      id: 'onboarding',
+      title: 'Onboarding',
+      description: 'Personenorientierte Onboarding-Empfehlungen basierend auf B6-Profilen',
+      icon: UserPlus,
+      color: 'from-[#B7DEDD] to-[#8EC5C3]',
+      bgColor: 'bg-[#E8F5F4]',
+      borderColor: 'border-[#B7DEDD]',
+      available: true,
+      requiresInterpretation: true,
+      route: '/onboarding'
     },
     {
       id: 'training',
@@ -191,21 +208,21 @@ function HomeContent() {
       router.push(module.route);
       return;
     }
-    
+
+    if (module.requiresInterpretation && savedInterpretations.length === 0) {
+      alert('Bitte führen Sie zuerst eine Anforderungsanalyse und Interpretation durch.');
+      return;
+    }
+
     if (module.requiresAnalysis && savedAnalyses.length === 0) {
       alert('Bitte führen Sie zuerst eine Anforderungsanalyse durch.');
       startModule('anforderungsanalyse');
       router.push('/anforderungsanalyse');
       return;
     }
-    
-    if (module.requiresAnalysis) {
-      startModule(module.id);
-      router.push(module.route);
-    } else {
-      startModule(module.id);
-      router.push(module.route);
-    }
+
+    startModule(module.id);
+    router.push(module.route);
   };
 
   const handleStartStandardProcess = () => {
@@ -224,6 +241,8 @@ function HomeContent() {
     } else if (type === 'interpretation') {
       setEditContent(item.interpretation || '');
     } else if (type === 'interview') {
+      setEditContent(item.guide || '');
+    } else if (type === 'onboarding') {
       setEditContent(item.guide || '');
     }
     
@@ -261,6 +280,11 @@ function HomeContent() {
       });
     } else if (editType === 'interview') {
       updateInterviewDirect(editingItem.id, {
+        name: editName.trim(),
+        guide: editContent
+      });
+    } else if (editType === 'onboarding') {
+      updateOnboardingDirect(editingItem.id, {
         name: editName.trim(),
         guide: editContent
       });
@@ -344,6 +368,24 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
     downloadFile(content, `Interviewleitfaden_${interview.name}`);
   };
 
+  const handleDownloadOnboarding = (onboarding) => {
+    const content = `ONBOARDING-LEITFADEN
+${'='.repeat(80)}
+
+Name: ${onboarding.name}
+Anforderungsanalyse: ${onboarding.analysisName || 'Nicht benannt'}
+Erstellt: ${new Date(onboarding.createdAt).toLocaleDateString('de-DE')}
+
+${'='.repeat(80)}
+
+${onboarding.guide || 'Kein Leitfaden'}
+
+${'='.repeat(80)}
+Erstellt mit Balanced Six - B6 Kompakt Assistent
+`;
+    downloadFile(content, `Onboarding_${onboarding.name}`);
+  };
+
   const downloadFile = (content, name) => {
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -369,6 +411,8 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
       deleteInterpretation(showDeleteConfirm);
     } else if (deleteType === 'interview') {
       deleteInterview(showDeleteConfirm);
+    } else if (deleteType === 'onboarding') {
+      deleteOnboarding(showDeleteConfirm);
     }
     setShowDeleteConfirm(null);
     setDeleteType(null);
@@ -388,6 +432,7 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
     if (editType === 'analysis') return 'Anforderungsprofil';
     if (editType === 'interpretation') return 'Interpretationsbericht';
     if (editType === 'interview') return 'Interviewleitfaden';
+    if (editType === 'onboarding') return 'Onboarding-Leitfaden';
     return 'Inhalt';
   };
 
@@ -579,6 +624,12 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                       Benötigt Anforderungsanalyse
                     </div>
                   )}
+                  {module.requiresInterpretation && (
+                    <div className="flex items-center gap-1 text-xs text-[#6BA8A6] bg-[#E8F5F4] px-2 py-1 rounded-full mb-4 w-fit">
+                      <Users className="w-3 h-3" />
+                      Benötigt Interpretation
+                    </div>
+                  )}
                   <button
                     onClick={() => handleStartModule(module)}
                     className={`mt-auto w-full py-2.5 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 bg-gradient-to-r ${module.color} text-white hover:shadow-md`}
@@ -731,7 +782,7 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
         </div>
 
         {/* Saved Interviews Table */}
-        <div className="bg-white rounded-xl border border-iron-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-iron-200 shadow-sm overflow-hidden mb-6">
           <button
             onClick={() => toggleSection('interviews')}
             className="w-full px-6 py-4 border-b border-iron-200 bg-gray-50 flex items-center justify-between hover:bg-gray-100 transition-colors"
@@ -785,6 +836,74 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                               <Download className="w-4 h-4" />
                             </button>
                             <button onClick={() => handleDelete(interview.id, 'interview')} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg" title="Löschen">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Saved Onboardings Table */}
+        <div className="bg-white rounded-xl border border-iron-200 shadow-sm overflow-hidden mb-6">
+          <button
+            onClick={() => toggleSection('onboardings')}
+            className="w-full px-6 py-4 border-b border-iron-200 bg-gray-50 flex items-center justify-between hover:bg-gray-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <UserPlus className="w-5 h-5 text-[#6BA8A6]" />
+              <h3 className="text-lg font-semibold text-gray-900">Onboarding-Leitfäden</h3>
+              <span className="text-sm text-gray-500">({savedOnboardings.length})</span>
+            </div>
+            {collapsedSections.onboardings ? <ChevronDown className="w-5 h-5 text-gray-400" /> : <ChevronUp className="w-5 h-5 text-gray-400" />}
+          </button>
+
+          {!collapsedSections.onboardings && (
+            savedOnboardings.length === 0 ? (
+              <div className="px-6 py-12 text-center">
+                <UserPlus className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Noch keine Onboarding-Leitfäden gespeichert</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-iron-200">
+                    <tr>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Name</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Analyse</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Erstellt</th>
+                      <th className="text-right px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Aktionen</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {savedOnboardings.map((onboarding) => (
+                      <tr key={onboarding.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-5 h-5 text-[#6BA8A6]" />
+                            <span className="font-medium text-gray-900">{onboarding.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{onboarding.analysisName}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{formatDate(onboarding.createdAt)}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleOpenEditModal(onboarding, 'onboarding')}
+                              className="px-3 py-1.5 text-sm font-medium text-[#6BA8A6] bg-[#E8F5F4] rounded-lg hover:bg-[#B7DEDD]/30 transition-colors flex items-center gap-1.5"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              Bearbeiten
+                            </button>
+                            <button onClick={() => handleDownloadOnboarding(onboarding)} className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg" title="Herunterladen">
+                              <Download className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(onboarding.id, 'onboarding')} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg" title="Löschen">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -856,6 +975,7 @@ Erstellt mit Balanced Six - B6 Kompakt Assistent
                     if (editType === 'analysis') handleDownloadAnalysis({ ...editingItem, name: editName, requirements: editContent });
                     else if (editType === 'interpretation') handleDownloadInterpretation({ ...editingItem, name: editName, interpretation: editContent });
                     else if (editType === 'interview') handleDownloadInterview({ ...editingItem, name: editName, guide: editContent });
+                    else if (editType === 'onboarding') handleDownloadOnboarding({ ...editingItem, name: editName, guide: editContent });
                   }}
                   className="px-4 py-2 text-gray-700 border border-iron-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
                 >

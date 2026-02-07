@@ -576,6 +576,85 @@ export const generateInterviewDocx = async (data) => {
 };
 
 // =====================
+// ONBOARDING-LEITFADEN
+// =====================
+export const generateOnboardingDocx = async (data) => {
+  const { name, analysisName, requirements, interpretation, candidates, interviewGuide, guide } = data;
+  const date = new Date().toLocaleDateString('de-DE');
+  const logoData = await fetchLogo();
+  const hasCandidates = candidates && candidates.length > 0;
+
+  const sections = [
+    ...createTitleSection('Onboarding-Leitfaden', name || analysisName || 'Unbenannt', date),
+
+    new Paragraph({
+      children: [
+        new TextRun({ text: 'Anforderungsanalyse: ', bold: true }),
+        new TextRun(analysisName || 'Nicht angegeben'),
+      ],
+      spacing: { after: hasCandidates ? 120 : 240 },
+    }),
+  ];
+
+  if (hasCandidates) {
+    sections.push(new Paragraph({
+      children: [
+        new TextRun({ text: 'Kandidaten: ', bold: true }),
+        new TextRun(candidates.map(c => c.name).join(', ')),
+      ],
+      spacing: { after: 240 },
+    }));
+  }
+
+  sections.push(
+    new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      children: [new TextRun({ text: 'Onboarding-Leitfaden', bold: true })],
+    }),
+    ...parseContentToParagraphs(guide || 'Kein Leitfaden vorhanden.'),
+
+    new Paragraph({
+      heading: HeadingLevel.HEADING_2,
+      children: [new TextRun({ text: 'Hinweise zur Nutzung', bold: true })],
+      spacing: { before: 360 },
+    }),
+
+    new Paragraph({
+      numbering: { reference: 'bullets', level: 0 },
+      children: [new TextRun('Dieser Leitfaden basiert auf B6-Profildaten und Gesprächserkenntnissen.')],
+    }),
+    new Paragraph({
+      numbering: { reference: 'bullets', level: 0 },
+      children: [new TextRun('Alle Empfehlungen sind Hypothesen und sollten an die reale Situation angepasst werden.')],
+    }),
+    new Paragraph({
+      numbering: { reference: 'bullets', level: 0 },
+      children: [new TextRun('Der Leitfaden ist als lebendiges Dokument gedacht – passen Sie ihn fortlaufend an.')],
+    }),
+
+    ...createFooter(),
+  );
+
+  const doc = new Document({
+    ...createDocumentConfig(),
+    sections: [{
+      properties: {
+        page: {
+          size: { width: 11906, height: 16838 }, // A4
+          margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
+        },
+      },
+      headers: {
+        default: createDocumentHeader(logoData),
+      },
+      children: sections,
+    }],
+  });
+
+  return await Packer.toBlob(doc);
+};
+
+// =====================
 // DOWNLOAD HELPER
 // =====================
 export const downloadDocx = (blob, filename) => {
