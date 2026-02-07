@@ -64,6 +64,7 @@ export async function POST(request) {
     const stream = await anthropic.messages.create({
       model: model || 'claude-sonnet-4-5-20250929',
       max_tokens: 8192,
+      temperature: 0.8,
       system: systemContent,
       messages: cachedMessages,
       stream: true,
